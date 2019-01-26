@@ -1,5 +1,7 @@
 *
 !.*
+!Src
+!Inc
 !Src/*
 !Inc/*
 !*.ioc
