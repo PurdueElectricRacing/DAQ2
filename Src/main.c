@@ -142,8 +142,15 @@ int main(void)
 
   init_daq2(&daq, &hi2c1, &hi2c3, &htim2, &hcan1, &hcan2);
 
-  HAL_CAN_Start(&hcan1);
-  HAL_CAN_Start(&hcan2);
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+	{
+  	HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
+	}
+
+  if (HAL_CAN_Start(&hcan2) != HAL_OK)
+	{
+		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+	}
 
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING);
@@ -191,6 +198,7 @@ int main(void)
   {
 
   /* USER CODE END WHILE */
+
   /* USER CODE BEGIN 3 */
 
   }

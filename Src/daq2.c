@@ -7,6 +7,7 @@
 
 #include "daq2.h"
 #include "DAQ_CAN.h"
+#include "MAXsensor.h"
 
 extern volatile hall_sensor g_right_wheel;
 extern volatile hall_sensor g_left_wheel;
@@ -14,6 +15,8 @@ extern volatile hall_sensor g_c_flow;
 extern volatile DAQ_t daq;
 extern uint32_t uwTick;
 max1161x g_adc_mux;
+sensor_t g_max11614_sensors[MAX11614_CHANNELS];
+sensor_t g_max11616_sensors[MAX11616_CHANNELS];
 
 
 /**
@@ -25,7 +28,8 @@ max1161x g_adc_mux;
  *
  * @return none
  * */
-void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan)
+void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1,
+						TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan)
 {
 	controller->dcan = dcan;
 	controller->vcan = vcan;
@@ -49,22 +53,98 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
+ * @brief Initializes the array of sensors which are connected to
+ * 				the MAX1161x chip.
+ *
+ * @param sensor_array: pointer to the array of sensors
+ * @param size: length of the corresponding array
+ *
+ * @return None.
+ * */
+void init_max_arrays()
+{
+	// assign each sensor its maxim pointer
+	uint8_t i;
+	for (i = 0; i < MAX11614_CHANNELS; i++)
+	{
+		g_max11614_sensors[i].max = &g_adc_mux;
+	}
+	for (i = 0; MAX11616_CHANNELS; i++)
+	{
+		g_max11616_sensors[i].max = &g_adc_mux;
+	}
+	g_max11614_sensors[STEER_TIE_ROD_RIGHT].pin = STEER_TIE_ROD_RIGHT;
+	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = NULL;
+	g_max11614_sensors[STEER_TIE_ROD_LEFT].pin = STEER_TIE_ROD_LEFT;
+	g_max11614_sensors[STEER_TIE_ROD_LEFT].read = NULL;
+	g_max11614_sensors[PUSH_ROD_RIGHT].pin = PUSH_ROD_RIGHT;
+	g_max11614_sensors[PUSH_ROD_RIGHT].read = NULL;
+	g_max11614_sensors[PUSH_ROD_LEFT].pin = PUSH_ROD_LEFT;
+	g_max11614_sensors[PUSH_ROD_LEFT].read = NULL;
+	g_max11614_sensors[LCA_L_BACK].pin = LCA_L_BACK;
+	g_max11614_sensors[LCA_L_BACK].read = NULL;
+	g_max11614_sensors[LCA_L_FRONT].pin = LCA_L_FRONT;
+	g_max11614_sensors[LCA_L_FRONT].read = NULL;
+	g_max11614_sensors[UCA_L_BACK].pin = UCA_L_BACK;
+	g_max11614_sensors[UCA_L_BACK].read = NULL;
+	g_max11614_sensors[UCA_L_FRONT].pin = UCA_L_FRONT;
+	g_max11614_sensors[UCA_L_FRONT].read = NULL;
+
+	g_max11616_sensors[UCA_R_BACK].pin = UCA_R_BACK;
+	g_max11616_sensors[UCA_R_BACK].read = NULL;
+	g_max11616_sensors[UCA_R_FRONT].pin = UCA_R_FRONT;
+	g_max11616_sensors[UCA_R_FRONT].read = NULL;
+	g_max11616_sensors[LCA_R_FRONT].pin = LCA_R_FRONT;
+	g_max11616_sensors[LCA_R_FRONT].read = NULL;
+	g_max11616_sensors[LCA_R_BACK].pin = LCA_R_BACK;
+	g_max11616_sensors[LCA_R_BACK].read = NULL;
+	g_max11616_sensors[MOTOR_C_TEMP].pin = MOTOR_C_TEMP;
+	g_max11616_sensors[MOTOR_C_TEMP].read = &maxsensor_Inlineflow_Read;
+	g_max11616_sensors[RAD_C_TEMP].pin = RAD_C_TEMP;
+	g_max11616_sensors[RAD_C_TEMP].read = &maxsensor_Inlineflow_Read;
+	g_max11616_sensors[MOTOR_CONT_C_TEMP].pin = MOTOR_CONT_C_TEMP;
+	g_max11616_sensors[MOTOR_CONT_C_TEMP].read = &maxsensor_Inlineflow_Read;
+	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
+	g_max11616_sensors[LEFT_SHOCK_POT].read = NULL;
+	g_max11616_sensors[ARB_DROPLINK_LEFT].pin = ARB_DROPLINK_LEFT;
+	g_max11616_sensors[ARB_DROPLINK_LEFT].read = NULL;
+	g_max11616_sensors[ARB_DROPLINK_RIGHT].pin = ARB_DROPLINK_RIGHT;
+	g_max11616_sensors[ARB_DROPLINK_RIGHT].read = NULL;
+	g_max11616_sensors[ARB_TORSIONAL].pin = ARB_TORSIONAL;
+	g_max11616_sensors[ARB_TORSIONAL].read = NULL;
+	g_max11616_sensors[RIGHT_SHOCK_POT].pin = RIGHT_SHOCK_POT;
+	g_max11616_sensors[RIGHT_SHOCK_POT].read = NULL;
+}
+
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
  * @brief Creates the tasks
  *
  * @return none
  * */
 void start_daq2()
 {
-	xTaskCreate(task_heartbeat, "HEARTBEAT", 32, NULL, 1, NULL);
+	// @TODO resize stack size for each function
+	xTaskCreate(task_heartbeat, "HEARTBEAT", 4, NULL, 1, NULL);
 	xTaskCreate(taskTX_DCAN, "TX CAN DCAN", 256, NULL, 1, NULL);
 	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", 256, NULL, 1, NULL);
 	xTaskCreate(taskRX_VCANProcess, "RX CAN", 256, NULL, 1, NULL);
-	xTaskCreate(read_adc_task, "ADC TASK", 256, &g_adc_mux, 1, NULL);
+	xTaskCreate(read_adc_task, "ADC TASK", 256, NULL, 1, NULL);
 	xTaskCreate(send_wheel_speed_task, "BUFFER WHEEL SPEED", 256, NULL , 1, NULL);
 	xTaskCreate(wheel_speed_zero_task, "ZERO WHEEL SPEED TASK", 256, NULL , 1, NULL);
+	xTaskCreate(send_uca_data, "UCA DATA TASK", 256, 1, NULL);
+	xTaskCreate(send_lca_data, "LCA_DATA_TASK", 256, 1, NULL);
+	xTaskCreate(send_shock_data, "SHOCK DATA TASK", 256, 1, NULL);
+	xTaskCreate(send_arb_torsional_data, "ARB TORSIONAL DATA", 256, 1, NULL);
 
 #ifdef REAR_DAQ
 	xTaskCreate(send_coolant_data_task, "COOLANT DATA TASK", 256, NULL, 1, NULL);
+	xtaskCreate(send_push_rod_data, "PUSH ROD DATA TASK", 256, NULL, 1, NULL);
+
+#else
+	xTaskCreate(send_steer_rod_data, "STEER ROD DATA TASK", 256, 1, NULL);
 #endif
 
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
@@ -96,8 +176,116 @@ void set_wheel_speed_capture(uint8_t enable)
 		vTaskSuspend(wheel_speed_zero_task);
 	}
 }
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send shock pot data
+ *
+ * @return none
+ * */
+void send_shock_data()
+{
+	for (;;)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = SHOCK_POT_ID;
+		tx.Data[0] = (g_max11616_sensors[LEFT_SHOCK_POT].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11616_sensors[LEFT_SHOCK_POT].value) & 0x0F;
+		tx.Data[2] = (g_max11616_sensors[RIGHT_SHOCK_POT].value >> 8) & 0x0F ;
+		tx.Data[3] = (g_max11616_sensors[RIGHT_SHOCK_POT].value) & 0x0F;
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 4;
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
+}
 
-#ifdef REAR_DAQ
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_arb_torsional_data()
+{
+	for (;;)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = ARB_TORSIONAL_ID;
+		tx.Data[0] = (g_max11614_sensors[ARB_TORSIONAL].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11614_sensors[ARB_TORSIONAL].value) & 0x0F;
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 2;
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_uca_data()
+{
+
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_lca_data()
+{
+
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_drop_link_data()
+{
+
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_steer_rod_data()
+{
+
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief task to send
+ *
+ * @return none
+ * */
+void send_push_rod_data()
+{
+
+}
+
+
+
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
@@ -127,24 +315,28 @@ void set_c_flow_capture(uint8_t enable)
  * */
 void send_coolant_data_task()
 {
-	CanTxMsgTypeDef tx;
-	tx.StdId = ID_R_COOLANT;
-	tx.Data[0] = 0;
-	tx.Data[1] = 0;
-	tx.Data[2] = 0;
-	tx.Data[3] = 0;
-	tx.Data[4] = 0;
-	tx.Data[5] = 0;
-	tx.Data[6] = (g_c_flow.speed & 0xF0) >> 8;
-	tx.Data[7] = (g_c_flow.speed & 0x0F);
-	tx.IDE = CAN_ID_STD;
-	tx.RTR = CAN_RTR_DATA;
-	tx.DLC = 8;
+	for (;;)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = ID_R_COOLANT;
+		tx.Data[0] = (g_max11616_sensors[MOTOR_C_TEMP].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11616_sensors[MOTOR_C_TEMP].value) & 0x0F;
+		tx.Data[2] = (g_c_flow.speed >> 8) & 0x0F;
+		tx.Data[3] = (g_c_flow.speed & 0x0F);
+		tx.Data[4] = (g_max11616_sensors[RAD_C_TEMP].value >> 8) & 0x0F;
+		tx.Data[5] = (g_max11616_sensors[RAD_C_TEMP].value) & 0x0F;
+		tx.Data[6] = (g_max11616_sensors[MOTOR_CONT_C_TEMP].value >> 8) & 0x0F
+		tx.Data[7] = (g_max11616_sensors[MOTOR_CONT_C_TEMP].value) & 0x0F
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 8;
 
-	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(COOLANT_DATA_PERIOD);
+
+	}
 }
 
-#endif
 
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
@@ -171,18 +363,27 @@ void task_heartbeat()
  * @param mux: pointer to the mux object
  *
  * @return none*/
-void read_adc_task(void * v_mux)
+void read_adc_task(void)
 {
 	//TODO add to CAN queue
-	max1161x * mux = (max1161x*) v_mux;
 	for(;;)
 	{
 //		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 		if (!mux->broke && mux->enable)
 		{
-			max1161x_Scan(mux, mux->data);
+			uint8_t i = 0;
+			// read every channel on all the MAX chips
+			for (i = 0; i < MAX11616_CHANNELS; i++)
+			{
+				g_max11616_sensors[i].read(g_max11616_sensors[i].max);
+			}
+			for (i = 0; i < MAX11614_CHANNELS; i++)
+			{
+				g_max11614_sensors[i].read(g_max11614_sensors[i].max);
+			}
 		}
 		vTaskDelay(MUX_READ_PERIOD);
+		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 	}
 
 }
@@ -199,8 +400,7 @@ void send_wheel_speed_task()
 
 	for (;;)
 	{
-		// if speed collection is enabled
-		// both wheels should be enabled or disabled.
+		// if speed collection is enabled, both wheels should be enabled or disabled.
 		// individual wheel speed toggle is not an option, so just assume that both are
 		// enabled or disabled.
 		if (g_left_wheel.enable)
@@ -217,6 +417,7 @@ void send_wheel_speed_task()
 			xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 		}
 		vTaskDelay(WHEEL_SPD_SEND_PERIOD);
+		HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
 	}
 
 }
@@ -258,6 +459,7 @@ void wheel_speed_zero_task()
  *
  * @return none
  * */
+/* @TODO actually implement this lol */
 void process_sensor_enable(uint8_t * data)
 {
 	set_wheel_speed_capture(data[0] & 0b10000000);

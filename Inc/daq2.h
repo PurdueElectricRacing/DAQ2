@@ -14,18 +14,64 @@
 #include "hall_effect_sensors.h"
 #include "max1161x.h"
 #include "DAQ_CAN.h"
+#include "MAXsensor.h"
 
 #define REAR_DAQ		// undefine this if this is the front DAQ board
 
 #ifdef REAR_DAQ
-#define ID_WHEEL_SPEED ID_R_WHEEL_SPEED
+	#define ID_WHEEL_SPEED   ID_R_WHEEL_SPEED
+	#define SHOCK_POT_ID     ID_R_SHOCKS
+	#define LCA_ID           ID_R_LCA
+	#define UCA_ID           ID_R_UCA
+	#define ARB_ID					 ID_R_ARB
+	#define TIRE_TEMP_ID     ID_R_TIRE_TEMP
+#else
+ 	#define ID_WHEEL_SPEED   ID_F_WHEEL_SPEED
+	#define SHOCK_POT_ID     ID_F_SHOCKS
+	#define LCA_ID           ID_F_LCA
+	#define UCA_ID           ID_F_UCA
+	#define ARB_ID					 ID_F_ARB
+	#define TIRE_TEMP_IP     ID_F_TIRE_TEMP
 #endif
 
-#define MUX_READ_PERIOD       10  / portTICK_RATE_MS 	// 100hz
+#define MUX_READ_PERIOD       10 / portTICK_RATE_MS 	// 100hz
 #define HEARTBEAT_PERIOD      250 / portTICK_RATE_MS	// 2.5hz
-#define WHEEL_SPD_SEND_PERIOD 10  / portTICK_RATE_MS  // 100hz
-#define SPEED_ZERO_PERIOD		  250 / portTICK_RATE_MS	// 2.5hz
-#define SPEED_ZERO_TIMEOUT    100 	// 100ms
+#define WHEEL_SPD_SEND_PERIOD 10 / portTICK_RATE_MS  // 100hz
+#define COOLANT_DATA_PERIOD   10 / portTICK_RATE_MS
+#define SPEED_ZERO_TIMEOUT    100 / portTICK_RATE_MS	// 1hz
+#define SPEED_ZERO_PERIOD		  250 / portTICK_RATE_MS	// .25hz
+#define REFRESH_RATE          10 / portTICK_RATE_MS
+
+// defines match both the location in the array and also the channel on each MAX chip
+// MAX11616 DEVICES BELOW
+#define UCA_R_BACK   0
+#define UCA_R_FRONT  1
+#define LCA_R_FRONT  3
+#define LCA_R_BACK   2
+
+#define MOTOR_C_TEMP  		 4
+#define RAD_C_TEMP    		 5
+#define MOTOR_CONT_C_TEMP  6
+
+#define LEFT_SHOCK_POT   7
+
+#define ARB_DROPLINK_LEFT  8
+#define ARB_DROPLINK_RIGHT 9
+#define ARB_TORSIONAL      10
+
+#define RIGHT_SHOCK_POT  11
+
+// MAX11614 DEVICES BELOW
+#define STEER_TIE_ROD_RIGHT 0
+#define STEER_TIE_ROD_LEFT  1
+
+#define PUSH_ROD_RIGHT  2
+#define PUSH_ROD_LEFT   3
+
+#define LCA_L_BACK   7
+#define LCA_L_FRONT  6
+#define UCA_L_BACK   5
+#define UCA_L_FRONT  4
 
 typedef struct DAQ_t
 {
@@ -39,14 +85,26 @@ typedef struct DAQ_t
 }DAQ_t;
 
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan);
-void read_adc_task(void * v_mux);
-void wheel_speed_zero_task();
-void send_wheel_speed_task();
-void process_sensor_enable(uint8_t * data);
-void task_heartbeat();
 void start_daq2();
+void init_max_arrays();
+
+void task_heartbeat();
+
+void read_adc_task(void);
+void process_sensor_enable(uint8_t * data);
+void wheel_speed_zero_task();
 void set_wheel_speed_capture(uint8_t enable);
+
+void send_wheel_speed_task();
 void send_coolant_data_task();
+void send_shock_data();
+void send_arb_data();
+void send_uca_data();
+void send_lca_data();
+void send_drop_link_data();
+void send_steer_rod_data();
+void send_push_rod_data();
+void send_tire_temp_data();
 
 
 

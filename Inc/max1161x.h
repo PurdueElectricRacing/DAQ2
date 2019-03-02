@@ -42,7 +42,6 @@ typedef struct
 	I2C_HandleTypeDef *wireIface;
 	uint8_t broke;
 	uint8_t enable;
-	uint16_t data[MAX11614_CHANNELS];
 } max1161x;
 
 max1161x new_max1161x              (void);

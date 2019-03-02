@@ -90,8 +90,7 @@ void inline calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t cha
 	sensor->time_n = __HAL_TIM_GET_COMPARE(sensor->htim, channel);		//current time gets stored in the sensor's respective channel
 	dt = sensor->time_n - sensor->time_n_minus_1;
 
-	if (channel == RIGHT_WHEEL_CHANNEL
-			|| channel == LEFT_WHEEL_CHANNEL)
+	if (channel == RIGHT_WHEEL_CHANNEL || channel == LEFT_WHEEL_CHANNEL)
 	{
 		sensor->speed = calculate_wheel_speed(dt);
 	}
