@@ -52,6 +52,9 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
+#include "hall_effect_sensors.h"
+#include "max1161x.h"
+#include "daq2.h"
 
 /* USER CODE END Includes */
 
@@ -70,6 +73,14 @@ osThreadId defaultTaskHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+volatile DAQ_t daq;
+volatile hall_sensor g_right_wheel;
+volatile hall_sensor g_left_wheel;
+
+#ifdef REAR_DAQ
+	volatile hall_sensor g_c_flow;
+#endif
+//max1161x g_adc_mux;
 
 /* USER CODE END PV */
 
@@ -86,10 +97,10 @@ void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+
 
 /* USER CODE END 0 */
 
@@ -101,7 +112,6 @@ void StartDefaultTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -129,6 +139,18 @@ int main(void)
   MX_I2C1_Init();
   MX_USB_OTG_FS_HCD_Init();
   /* USER CODE BEGIN 2 */
+
+  init_daq2(&daq, &hi2c1, &hi2c3, &htim2, &hcan1, &hcan2);
+
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_Start(&hcan2);
+
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING);
+
+  start_daq2();
 
   /* USER CODE END 2 */
 
@@ -169,7 +191,6 @@ int main(void)
   {
 
   /* USER CODE END WHILE */
-
   /* USER CODE BEGIN 3 */
 
   }
