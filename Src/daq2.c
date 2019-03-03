@@ -138,13 +138,13 @@ void start_daq2()
 	xTaskCreate(send_lca_data, "LCA_DATA_TASK", 256, 1, NULL);
 	xTaskCreate(send_shock_data, "SHOCK DATA TASK", 256, 1, NULL);
 	xTaskCreate(send_arb_torsional_data, "ARB TORSIONAL DATA", 256, 1, NULL);
+	xtaskCreate(send_push_rod_data, "PUSH ROD DATA TASK", 256, NULL, 1, NULL);
 
 #ifdef REAR_DAQ
 	xTaskCreate(send_coolant_data_task, "COOLANT DATA TASK", 256, NULL, 1, NULL);
-	xtaskCreate(send_push_rod_data, "PUSH ROD DATA TASK", 256, NULL, 1, NULL);
 
 #else
-	xTaskCreate(send_steer_rod_data, "STEER ROD DATA TASK", 256, 1, NULL);
+	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", 256, 1, NULL);
 #endif
 
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
@@ -185,7 +185,7 @@ void set_wheel_speed_capture(uint8_t enable)
  * */
 void send_shock_data()
 {
-	for (;;)
+	while (PER)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = SHOCK_POT_ID;
@@ -204,13 +204,13 @@ void send_shock_data()
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
- * @brief task to send
+ * @brief task to send arb torsional data
  *
  * @return none
  * */
 void send_arb_torsional_data()
 {
-	for (;;)
+	while (PER)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = ARB_TORSIONAL_ID;
@@ -227,61 +227,117 @@ void send_arb_torsional_data()
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
- * @brief task to send
+ * @brief task to send upper control arm data
  *
  * @return none
  * */
 void send_uca_data()
 {
+	while (PER)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = UCA_ID;
+		tx.Data[0] = (g_max11614_sensors[UCA_L_FRONT].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11614_sensors[UCA_L_FRONT].value) & 0x0F;
+		tx.Data[2] = (g_max11614_sensors[UCA_L_BACK].value >> 8) & 0x0F;
+		tx.Data[3] = (g_max11614_sensors[UCA_L_BACK].value) & 0x0F;
+		tx.Data[4] = (g_max11616_sensors[UCA_R_FRONT].value >> 8) & 0x0F;
+		tx.Data[5] = (g_max11616_sensors[UCA_R_FRONT].value) & 0x0F;
+		tx.Data[6] = (g_max11616_sensors[UCA_R_BACK].value >> 8) & 0x0F
+		tx.Data[7] = (g_max11616_sensors[UCA_R_BACK].value) & 0x0F
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 8;
 
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
 }
 
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
- * @brief task to send
+ * @brief task to send lower control arm data
  *
  * @return none
  * */
 void send_lca_data()
 {
+	while (PER)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = LCA_ID;
+		tx.Data[0] = (g_max11614_sensors[LCA_L_FRONT].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11614_sensors[LCA_L_FRONT].value) & 0x0F;
+		tx.Data[2] = (g_max11614_sensors[LCA_L_BACK].value >> 8) & 0x0F;
+		tx.Data[3] = (g_max11614_sensors[LCA_L_BACK].value) & 0x0F;
+		tx.Data[4] = (g_max11616_sensors[LCA_R_FRONT].value >> 8) & 0x0F;
+		tx.Data[5] = (g_max11616_sensors[LCA_R_FRONT].value) & 0x0F;
+		tx.Data[6] = (g_max11616_sensors[LCA_R_BACK].value >> 8) & 0x0F
+		tx.Data[7] = (g_max11616_sensors[LCA_R_BACK].value) & 0x0F
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 8;
 
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
 }
 
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
- * @brief task to send
+ * @brief task to send ARB droplink data
  *
  * @return none
  * */
 void send_drop_link_data()
 {
+	while (PER)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = ID_F_DROP_LINKS;
+		tx.Data[0] = (g_max11616_sensors[ARB_DROPLINK_LEFT].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11616_sensors[ARB_DROPLINK_LEFT].value) & 0x0F;
+		tx.Data[2] = (g_max11616_sensors[ARB_DROPLINK_RIGHT].value >> 8) & 0x0F;
+		tx.Data[3] = (g_max11616_sensors[ARB_DROPLINK_RIGHT].value) & 0x0F;
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 4;
 
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
 }
 
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
- * @brief task to send
- *
- * @return none
- * */
-void send_steer_rod_data()
-{
-
-}
-
-/**
- * Programmer: fallon2@purdue.edu - Chris Fallon
- *
- * @brief task to send
+ * @brief task to send push rod data
  *
  * @return none
  * */
 void send_push_rod_data()
 {
+	while (PER)
+	{
+		CanTxMsgTypeDef tx;
+		tx.StdId = PUSH_ROD_ID;
+		tx.Data[0] = (g_max11614_sensors[PUSH_ROD_RIGHT].value >> 8) & 0x0F;
+		tx.Data[1] = (g_max11614_sensors[PUSH_ROD_RIGHT].value) & 0x0F;
+		tx.Data[2] = (g_max11614_sensors[STEER_TIE_ROD_RIGHT].value >> 8) & 0x0F;
+		tx.Data[3] = (g_max11614_sensors[STEER_TIE_ROD_RIGHT].value) & 0x0F;
+		tx.Data[4] = (g_max11614_sensors[PUSH_ROD_LEFT].value >> 8) & 0x0F;
+		tx.Data[5] = (g_max11614_sensors[PUSH_ROD_LEFT].value) & 0x0F;
+		tx.Data[6] = (g_max11614_sensors[STEER_TIE_ROD_LEFT].value >> 8) & 0x0F
+		tx.Data[7] = (g_max11614_sensors[STEER_TIE_ROD_LEFT].value) & 0x0F
+		tx.IDE = CAN_ID_STD;
+		tx.RTR = CAN_RTR_DATA;
+		tx.DLC = 8;
 
+		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		vTaskDelay(REFRESH_RATE);
+	}
 }
 
 
@@ -315,7 +371,7 @@ void set_c_flow_capture(uint8_t enable)
  * */
 void send_coolant_data_task()
 {
-	for (;;)
+	while (PER)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = ID_R_COOLANT;
@@ -347,7 +403,7 @@ void send_coolant_data_task()
  * */
 void task_heartbeat()
 {
-	for (;;)
+	while (PER)
 	{
 		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		vTaskDelay(HEARTBEAT_PERIOD);
@@ -366,7 +422,7 @@ void task_heartbeat()
 void read_adc_task(void)
 {
 	//TODO add to CAN queue
-	for(;;)
+	while (PER)
 	{
 //		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 		if (!mux->broke && mux->enable)
@@ -398,7 +454,7 @@ void send_wheel_speed_task()
 {
 	CanTxMsgTypeDef tx;
 
-	for (;;)
+	while (PER)
 	{
 		// if speed collection is enabled, both wheels should be enabled or disabled.
 		// individual wheel speed toggle is not an option, so just assume that both are
@@ -430,7 +486,7 @@ void send_wheel_speed_task()
  * @return none*/
 void wheel_speed_zero_task()
 {
-	for(;;)
+	while (PER)
 	{
 //		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		if (g_left_wheel.enable)

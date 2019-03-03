@@ -16,6 +16,8 @@
 #include "DAQ_CAN.h"
 #include "MAXsensor.h"
 
+#define PER 1
+
 #define REAR_DAQ		// undefine this if this is the front DAQ board
 
 #ifdef REAR_DAQ
@@ -23,15 +25,17 @@
 	#define SHOCK_POT_ID     ID_R_SHOCKS
 	#define LCA_ID           ID_R_LCA
 	#define UCA_ID           ID_R_UCA
-	#define ARB_ID					 ID_R_ARB
+	#define ARB_TORSIONAL_ID ID_R_ARB
 	#define TIRE_TEMP_ID     ID_R_TIRE_TEMP
+	#define PUSH_ROD_ID      ID_F_STEER_PUSH
 #else
  	#define ID_WHEEL_SPEED   ID_F_WHEEL_SPEED
 	#define SHOCK_POT_ID     ID_F_SHOCKS
 	#define LCA_ID           ID_F_LCA
 	#define UCA_ID           ID_F_UCA
-	#define ARB_ID					 ID_F_ARB
+	#define ARB_TORSIONAL_ID ID_F_ARB
 	#define TIRE_TEMP_IP     ID_F_TIRE_TEMP
+	#define PUSH_ROD_ID      ID_R_TIE_PUSH
 #endif
 
 #define MUX_READ_PERIOD       10 / portTICK_RATE_MS 	// 100hz
@@ -98,11 +102,10 @@ void set_wheel_speed_capture(uint8_t enable);
 void send_wheel_speed_task();
 void send_coolant_data_task();
 void send_shock_data();
-void send_arb_data();
+void send_arb_torsional_data();
 void send_uca_data();
 void send_lca_data();
 void send_drop_link_data();
-void send_steer_rod_data();
 void send_push_rod_data();
 void send_tire_temp_data();
 
