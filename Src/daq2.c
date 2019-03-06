@@ -40,6 +40,7 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 
 	init_hall_sensor(&g_left_wheel, htim, LEFT_WHEEL_CHANNEL);
 	init_hall_sensor(&g_right_wheel, htim, RIGHT_WHEEL_CHANNEL);
+	init_max_arrays();
 
 	#ifdef REAR_DAQ
 		init_hall_sensor(&g_c_flow, htim, C_FLOW_CHANNEL);
@@ -185,7 +186,7 @@ void set_wheel_speed_capture(uint8_t enable)
  * */
 void send_shock_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = SHOCK_POT_ID;
@@ -210,7 +211,7 @@ void send_shock_data()
  * */
 void send_arb_torsional_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = ARB_TORSIONAL_ID;
@@ -233,7 +234,7 @@ void send_arb_torsional_data()
  * */
 void send_uca_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = UCA_ID;
@@ -263,7 +264,7 @@ void send_uca_data()
  * */
 void send_lca_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = LCA_ID;
@@ -293,7 +294,7 @@ void send_lca_data()
  * */
 void send_drop_link_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = ID_F_DROP_LINKS;
@@ -319,7 +320,7 @@ void send_drop_link_data()
  * */
 void send_push_rod_data()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = PUSH_ROD_ID;
@@ -371,7 +372,7 @@ void set_c_flow_capture(uint8_t enable)
  * */
 void send_coolant_data_task()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
 		tx.StdId = ID_R_COOLANT;
@@ -403,7 +404,7 @@ void send_coolant_data_task()
  * */
 void task_heartbeat()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		vTaskDelay(HEARTBEAT_PERIOD);
@@ -422,7 +423,7 @@ void task_heartbeat()
 void read_adc_task(void)
 {
 	//TODO add to CAN queue
-	while (PER)
+	while (PER == GREAT)
 	{
 //		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 		if (!mux->broke && mux->enable)
@@ -454,7 +455,7 @@ void send_wheel_speed_task()
 {
 	CanTxMsgTypeDef tx;
 
-	while (PER)
+	while (PER == GREAT)
 	{
 		// if speed collection is enabled, both wheels should be enabled or disabled.
 		// individual wheel speed toggle is not an option, so just assume that both are
@@ -486,7 +487,7 @@ void send_wheel_speed_task()
  * @return none*/
 void wheel_speed_zero_task()
 {
-	while (PER)
+	while (PER == GREAT)
 	{
 //		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		if (g_left_wheel.enable)

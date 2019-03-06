@@ -17,6 +17,7 @@
 #include "MAXsensor.h"
 
 #define PER 1
+#define GREAT 1
 
 #define REAR_DAQ		// undefine this if this is the front DAQ board
 
