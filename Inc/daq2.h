@@ -109,7 +109,7 @@ typedef struct DAQ_t
 	QueueHandle_t			q_rx_vcan;
 	QueueHandle_t			q_tx_vcan;
 
-	uint8_t can_enable
+	uint8_t can_enable;
 }DAQ_t;
 
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan);
@@ -132,8 +132,8 @@ void send_lca_data();
 void send_drop_link_data();
 void send_push_rod_data();
 void send_tire_temp_data();
-void set_sensor_capture(uint8_t enable, TaskFunction_t function, , uint8_t * sensor_group);
+void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t * sensor_group);
 void error_task(uint16_t frequency);
-void route_to_vcan(uint8_t * data, uint16_t id, uint8_t d_len);
+void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len);
 
 #endif /* DAQ2_H_ */

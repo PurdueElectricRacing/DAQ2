@@ -80,6 +80,7 @@ void init_max_arrays()
 	{
 		g_max11616_sensors[i].max = &g_max11616;
 	}
+
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].pin = STEER_TIE_ROD_RIGHT;
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[STEER_TIE_ROD_LEFT].pin = STEER_TIE_ROD_LEFT;
@@ -170,7 +171,7 @@ void start_daq2()
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", 256, NULL, 1, NULL);
 #endif
 
-	if (g_left_wheel.error || g_right_wheel.error || g_max11614.broke || g_max11616.error)
+	if (g_left_wheel.error || g_right_wheel.error || g_max11614.broke || g_max11616.broke)
 	{
 		xTaskCreate(error_task, "ERROR TASK", 256, 1, NULL);
 	}
@@ -195,13 +196,13 @@ void error_task()
 		tx.IDE = CAN_ID_STD;
 		tx.RTR = CAN_RTR_DATA;
 		tx.DLC = 5;
-		tx.data[L_WHEEL_SPD_ERROR] = g_left_wheel.error;
-		tx.data[R_WHEEL_SPD_ERROR] = g_right_wheel.error;
-		tx.data[MAX11614_ERROR] = g_max11614.broke;
-		tx.data[MAX11616_ERROR] = g_max11616.broke;
+		tx.Data[L_WHEEL_SPD_ERROR] = g_left_wheel.error;
+		tx.Data[R_WHEEL_SPD_ERROR] = g_right_wheel.error;
+		tx.Data[MAX11614_ERROR] = g_max11614.broke;
+		tx.Data[MAX11616_ERROR] = g_max11616.broke;
 
 		#ifdef REAR_DAQ
-			tx.data[COOL_SPD_ERROR] = g_c_flow.error;
+			tx.Data[COOL_SPD_ERROR] = g_c_flow.error;
 		#endif
 
 		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
@@ -557,9 +558,21 @@ void process_sensor_enable(uint8_t * data)
 	#endif
 }
 
-void route_to_vcan(uint8_t * data, uint16_t id, uint8_t d_len)
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief transfers a message on vcan to dcan
+ *
+ * @param data: pointer to data array
+ * @param id: CAN ID to broadcast under
+ * @param d_len: number of data values in the data array
+ *
+ * @return none
+ * */
+void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len)
 {
-	CanTxMessageTypeDef tx;
+	CanTxMsgTypeDef tx;
 	tx.StdId = id;
 	tx.DLC = d_len;
 	tx.IDE = CAN_ID_STD;
