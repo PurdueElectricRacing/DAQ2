@@ -227,7 +227,24 @@ void taskTX_VCAN()
 ***************************************************************************/
 void taskRX_DCANProcess()
 {
-	
+	CanRxMsgTypeDef rx;  //CanRxMsgTypeDef to be received on the queue
+	while (PER == GREAT)
+	{
+		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
+		if (xQueueReceive(daq.q_rx_dcan, &rx, portMAX_DELAY) == pdTRUE)
+		{
+			//A CAN message has been recieved
+			//check what kind of message we received
+			switch (rx.StdId)
+			{
+				case ID_DASHBOARD:
+				{
+
+					break;
+				}
+			}
+		}
+	}
 }
 
 void taskRX_VCANProcess()
@@ -247,6 +264,11 @@ void taskRX_VCANProcess()
 				case	ID_ENABLE_DAQ:
 				{
 					process_sensor_enable(rx.Data);
+					break;
+				}
+				case ID_DASHBOARD:
+				{
+					route_to_vcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
 					break;
 				}
 			}

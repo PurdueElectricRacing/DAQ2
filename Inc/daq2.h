@@ -13,7 +13,7 @@
 #include "cmsis_os.h"
 #include "hall_effect_sensors.h"
 #include "DAQ_CAN.h"
-#include "MAXsensor.h"
+#include "maxsensor.h"
 
 #define GREAT 1
 #define PER GREAT
@@ -134,6 +134,6 @@ void send_push_rod_data();
 void send_tire_temp_data();
 void set_sensor_capture(uint8_t enable, TaskFunction_t function, , uint8_t * sensor_group);
 void error_task(uint16_t frequency);
-
+void route_to_vcan(uint8_t * data, uint16_t id, uint8_t d_len);
 
 #endif /* DAQ2_H_ */

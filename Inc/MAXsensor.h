@@ -19,6 +19,7 @@ typedef struct {
 	uint8_t (*read)(void * p_self); //Should be called to get sensor value
 }sensor_t;
 
-uint8_t maxsensor_Inlineflow_Read(void *);
+uint8_t maxsensor_Inlineflow_Read(void*); //Update function for Amphenol Flow Temp sensor
+uint8_t maxsensor_Straingauge_Read(void*); //Update function for LPPS-22-100
 
 #endif /* MAXSENSOR_H_ */

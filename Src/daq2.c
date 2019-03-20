@@ -7,7 +7,7 @@
 
 #include "daq2.h"
 #include "DAQ_CAN.h"
-#include "MAXsensor.h"
+#include "maxsensor.h"
 #include "max1161x.h"
 
 extern volatile hall_sensor g_right_wheel;
@@ -81,30 +81,30 @@ void init_max_arrays()
 		g_max11616_sensors[i].max = &g_max11616;
 	}
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].pin = STEER_TIE_ROD_RIGHT;
-	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = NULL;
+	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[STEER_TIE_ROD_LEFT].pin = STEER_TIE_ROD_LEFT;
-	g_max11614_sensors[STEER_TIE_ROD_LEFT].read = NULL;
+	g_max11614_sensors[STEER_TIE_ROD_LEFT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[PUSH_ROD_RIGHT].pin = PUSH_ROD_RIGHT;
-	g_max11614_sensors[PUSH_ROD_RIGHT].read = NULL;
+	g_max11614_sensors[PUSH_ROD_RIGHT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[PUSH_ROD_LEFT].pin = PUSH_ROD_LEFT;
-	g_max11614_sensors[PUSH_ROD_LEFT].read = NULL;
+	g_max11614_sensors[PUSH_ROD_LEFT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[LCA_L_BACK].pin = LCA_L_BACK;
-	g_max11614_sensors[LCA_L_BACK].read = NULL;
+	g_max11614_sensors[LCA_L_BACK].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[LCA_L_FRONT].pin = LCA_L_FRONT;
-	g_max11614_sensors[LCA_L_FRONT].read = NULL;
+	g_max11614_sensors[LCA_L_FRONT].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[UCA_L_BACK].pin = UCA_L_BACK;
-	g_max11614_sensors[UCA_L_BACK].read = NULL;
+	g_max11614_sensors[UCA_L_BACK].read = &maxsensor_Straingauge_Read;
 	g_max11614_sensors[UCA_L_FRONT].pin = UCA_L_FRONT;
-	g_max11614_sensors[UCA_L_FRONT].read = NULL;
+	g_max11614_sensors[UCA_L_FRONT].read = &maxsensor_Straingauge_Read;
 
 	g_max11616_sensors[UCA_R_BACK].pin = UCA_R_BACK;
-	g_max11616_sensors[UCA_R_BACK].read = NULL;
+	g_max11616_sensors[UCA_R_BACK].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[UCA_R_FRONT].pin = UCA_R_FRONT;
-	g_max11616_sensors[UCA_R_FRONT].read = NULL;
+	g_max11616_sensors[UCA_R_FRONT].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[LCA_R_FRONT].pin = LCA_R_FRONT;
-	g_max11616_sensors[LCA_R_FRONT].read = NULL;
+	g_max11616_sensors[LCA_R_FRONT].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[LCA_R_BACK].pin = LCA_R_BACK;
-	g_max11616_sensors[LCA_R_BACK].read = NULL;
+	g_max11616_sensors[LCA_R_BACK].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[MOTOR_C_TEMP].pin = MOTOR_C_TEMP;
 	g_max11616_sensors[MOTOR_C_TEMP].read = &maxsensor_Inlineflow_Read;
 	g_max11616_sensors[RAD_C_TEMP].pin = RAD_C_TEMP;
@@ -112,14 +112,17 @@ void init_max_arrays()
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].pin = MOTOR_CONT_C_TEMP;
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].read = &maxsensor_Inlineflow_Read;
 	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
+
 	g_max11616_sensors[LEFT_SHOCK_POT].read = NULL;
+
 	g_max11616_sensors[ARB_DROPLINK_LEFT].pin = ARB_DROPLINK_LEFT;
-	g_max11616_sensors[ARB_DROPLINK_LEFT].read = NULL;
+	g_max11616_sensors[ARB_DROPLINK_LEFT].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[ARB_DROPLINK_RIGHT].pin = ARB_DROPLINK_RIGHT;
-	g_max11616_sensors[ARB_DROPLINK_RIGHT].read = NULL;
+	g_max11616_sensors[ARB_DROPLINK_RIGHT].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[ARB_TORSIONAL].pin = ARB_TORSIONAL;
-	g_max11616_sensors[ARB_TORSIONAL].read = NULL;
+	g_max11616_sensors[ARB_TORSIONAL].read = &maxsensor_Straingauge_Read;
 	g_max11616_sensors[RIGHT_SHOCK_POT].pin = RIGHT_SHOCK_POT;
+
 	g_max11616_sensors[RIGHT_SHOCK_POT].read = NULL;
 }
 
@@ -159,6 +162,10 @@ void start_daq2()
 	{
 		xTaskCreate(send_coolant_data_task, "COOLANT DATA TASK", 256, NULL, 1, NULL);
 	}
+	else
+	{
+		xTaskCreate(error_task, "ERROR TASK", 256, 1, NULL);
+	}
 #else
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", 256, NULL, 1, NULL);
 #endif
@@ -167,6 +174,7 @@ void start_daq2()
 	{
 		xTaskCreate(error_task, "ERROR TASK", 256, 1, NULL);
 	}
+
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
 }
 
@@ -445,7 +453,6 @@ void task_heartbeat()
 	}
 }
 
-
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
@@ -458,7 +465,6 @@ void read_adc_task()
 	//TODO add to CAN queue
 	while (PER == GREAT)
 	{
-//		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 		uint8_t i = 0;
 		// read every channel on all the MAX chips
 		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
@@ -483,10 +489,9 @@ void read_adc_task()
  * */
 void send_wheel_speed_task()
 {
-	CanTxMsgTypeDef tx;
-
 	while (PER == GREAT)
 	{
+		CanTxMsgTypeDef tx;
 		tx.StdId = ID_WHEEL_SPEED;
 		tx.Data[0] = (g_left_wheel.speed & 0xF0) >> 8;
 		tx.Data[1] = (g_left_wheel.speed & 0x0F);
@@ -497,6 +502,7 @@ void send_wheel_speed_task()
 		tx.RTR = CAN_RTR_DATA;
 
 		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+		xQueueSendToBack(daq.q_tx_vcan, &tx, 100);
 
 		vTaskDelay(WHEEL_SPD_SEND_PERIOD);
 		HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
@@ -549,4 +555,18 @@ void process_sensor_enable(uint8_t * data)
 	#else
 		set_sensor_capture(data[0] & DROP_LINK_CAN_MASK, send_drop_link_data, &daq.can_enable & DROP_LINK_CAN_MASK);
 	#endif
+}
+
+void route_to_vcan(uint8_t * data, uint16_t id, uint8_t d_len)
+{
+	CanTxMessageTypeDef tx;
+	tx.StdId = id;
+	tx.DLC = d_len;
+	tx.IDE = CAN_ID_STD;
+	tx.RTR = CAN_RTR_DATA;
+	for (uint8_t i = 0; i < d_len; i++)
+	{
+		tx.Data[i] = data[i];
+ 	}
+	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 }

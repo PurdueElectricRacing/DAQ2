@@ -1,39 +1,51 @@
 /*
- * InlineFlowTempSensor.c
+ *  maxsensor.c
  *
  *  Created on: Feb 9, 2019
  *      Author: halowens
  */
 #include "max1161x.h"
 #include <math.h>
-#include "MAXsensor.h"
+#include "maxsensor.h"
 
 /**
  * @brief      Calculates the temperature of the Inline Flow Temp Sensor
- * @param      *inlineT, Pointer to a sensor struct that defines the parameters of the specific sensor being read.
+ * @param      *tempSensor, Pointer to a sensor struct that defines the parameters of the specific sensor being read.
  */
-uint8_t maxsensor_Inlineflow_Read(void *sens)
+uint8_t maxsensor_Inlineflow_Read(void * tempSensor_temp)
 {
-	sensor_t * inlineT = (sensor_t *) sens;
-	uint8_t status;
-	uint16_t adcValue;
-	float vOut;
-	float resistance;
-	uint16_t knownR = 10000;
+  sensor_t * tempSensor = (sensor_t *) tempSensor_temp;
+  uint8_t status;
+  uint16_t adcValue;
+  float32_t vOut;
+  float32_t resistance;
+  uint16_t knownR = 10000; //Resistance of resistor in front of the flow Sensor
 
-	status = max1161x_ADC_Read(inlineT->max, inlineT->pin, &adcValue);
+  status = MAX11615_ADC_Read(tempSensor->max, tempSensor->pin, adcValue);
 
-	/*
-	 * This takes the read voltage value and calculates the resistance of the sensor based
-	 * off the fact that there is a 10k ohm resistor in front of the sensor like in the datasheet
-	 * No idea if it works but you need resistance to get the temperature value
-	 */
-	vOut = (adcValue / 4095.0) * 4.73;
-	resistance = (-knownR * vOut) / (vOut - 4.73);
-	//r = 10k/((5/v)-1)
-	//Temperature = -26.689*ln(x) + 272.279
-	inlineT->value = -26.689 * log(resistance) + 272.279;
-	return status;
+  vOut = (adcvalue / 4095.0) * 4.73;
+  resistance = (-knowR * vOut) / (vOut - 4.73);
 
+  //Line of best fit calculated off of data in datasheet
+  //Temperature = -26.689*ln(Resistance) + 272.279
+  tempSensor->value = -26.689 * log(resistance) + 272.279;
+
+  return status;
 }
 
+/**
+ * @brief      Calculates the distance of the shock pot between 0-100mm
+ * @param      *strainSensor, Pointer to a sensor struct that defines the parameters of the specific sensor being read.
+ */
+uint8_t maxsensor_Straingauge_Read(void * strainSensor_temp)
+{
+  sensor_t * strainSensor = (sensor_t *) tempSensor_temp;
+  uint8_t status;
+  uint8_t vOut;
+  uint8_t range = 100; //maximum travel distance of shock Pot
+
+  status = MAX11615_ADC_Read(strainSensor->max, strainSensor->pin, adcValue);
+  strainSensor->value = (adcValue/4095.0) * range;
+
+  return status;
+}

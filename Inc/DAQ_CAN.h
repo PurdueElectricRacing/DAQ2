@@ -41,6 +41,7 @@
 #define ID_R_ARB								0x7B1
 
 #define ID_DASHBOARD						0x7C0
+#define DASHBOARD_LENGTH        4
 
 #define ID_F_IMU								0x7D0
 
