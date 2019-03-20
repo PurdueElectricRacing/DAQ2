@@ -12,12 +12,11 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "hall_effect_sensors.h"
-#include "max1161x.h"
 #include "DAQ_CAN.h"
 #include "MAXsensor.h"
 
-#define PER 1
 #define GREAT 1
+#define PER GREAT
 
 #define REAR_DAQ		// undefine this if this is the front DAQ board
 
@@ -39,6 +38,15 @@
 	#define PUSH_ROD_ID      ID_R_TIE_PUSH
 #endif
 
+#define SPEED_CAN_MASK     0b10000000
+#define UCA_CAN_MASK       0b01000000
+#define LCA_CAN_MASK       0b00100000
+#define SHOCK_CAN_MASK     0b00010000
+#define ARB_TORS_CAN_MASK  0b00001000
+#define PUSH_ROD_CAN_MASK  0b00000100
+#define COOLANT_CAN_MASK   0b00000010
+#define DROP_LINK_CAN_MASK 0b00000001
+
 #define MUX_READ_PERIOD       10 / portTICK_RATE_MS 	// 100hz
 #define HEARTBEAT_PERIOD      250 / portTICK_RATE_MS	// 2.5hz
 #define WHEEL_SPD_SEND_PERIOD 10 / portTICK_RATE_MS  // 100hz
@@ -46,6 +54,7 @@
 #define SPEED_ZERO_TIMEOUT    100 / portTICK_RATE_MS	// 1hz
 #define SPEED_ZERO_PERIOD		  250 / portTICK_RATE_MS	// .25hz
 #define REFRESH_RATE          10 / portTICK_RATE_MS
+#define ERROR_MSG_PERIOD      10 / portTICK_RATE_MS
 
 // defines match both the location in the array and also the channel on each MAX chip
 // MAX11616 DEVICES BELOW
@@ -73,10 +82,22 @@
 #define PUSH_ROD_RIGHT  2
 #define PUSH_ROD_LEFT   3
 
-#define LCA_L_BACK   7
-#define LCA_L_FRONT  6
-#define UCA_L_BACK   5
 #define UCA_L_FRONT  4
+#define UCA_L_BACK   5
+#define LCA_L_FRONT  6
+#define LCA_L_BACK   7
+
+// error indexes in the error array
+#define L_WHEEL_SPD_ERROR 0
+#define R_WHEEL_SPD_ERROR 1
+#define MAX11614_ERROR    2
+#define MAX11616_ERROR    3
+#ifdef REAR_DAQ
+	#define ERROR_ID REAR_ERROR
+	#define COOL_SPD_ERROR    4
+#else
+	#define ERROR_ID FRONT_ERROR
+#endif
 
 typedef struct DAQ_t
 {
@@ -87,6 +108,8 @@ typedef struct DAQ_t
 	QueueHandle_t			q_tx_dcan;
 	QueueHandle_t			q_rx_vcan;
 	QueueHandle_t			q_tx_vcan;
+
+	uint8_t can_enable
 }DAQ_t;
 
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan);
@@ -109,8 +132,8 @@ void send_lca_data();
 void send_drop_link_data();
 void send_push_rod_data();
 void send_tire_temp_data();
-
-
+void set_sensor_capture(uint8_t enable, TaskFunction_t function, , uint8_t * sensor_group);
+void error_task(uint16_t frequency);
 
 
 #endif /* DAQ2_H_ */

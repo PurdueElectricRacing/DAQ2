@@ -47,7 +47,6 @@ uint8_t max1161x_Read8(max1161x *mux, uint8_t reg, uint8_t *val){
 void max1161x_Init(max1161x* mux, I2C_HandleTypeDef* wireIface, uint16_t address, uint8_t vRef){
 	mux->wireIface = wireIface;
 	mux->devAddress = address;
-	mux->enable = 1;
 
 	if (HAL_I2C_IsDeviceReady(wireIface, 0x66, 2, 100) != HAL_OK)
 	{

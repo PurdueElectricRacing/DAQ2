@@ -36,7 +36,6 @@ void init_hall_sensor(volatile hall_sensor *sensor, TIM_HandleTypeDef *htim, uin
 	sensor->time_n_minus_1 = 0;
 	sensor->speed = 0;
 	sensor->error = 0;
-	sensor->enable = 1;
 
 	if (HAL_TIM_IC_Start_IT(htim, channel) != HAL_OK)
 	{
@@ -79,7 +78,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 void inline calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
 {
-	if (sensor->error || !sensor->enable)
+	if (sensor->error)
 	{
 		return;
 	}
@@ -128,5 +127,3 @@ inline uint32_t calculate_flow_rate(uint32_t dt)
 	float speed = (((1.0f / dt) * 1000.0f) / LPM_CONVERSION );
 	return (uint32_t) (speed * SCALAR);
 }
-
-

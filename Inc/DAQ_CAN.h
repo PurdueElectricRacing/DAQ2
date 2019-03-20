@@ -46,6 +46,8 @@
 
 #define ID_ENABLE_DAQ						0x7E0
 
+#define FRONT_ERROR             0x7F0
+#define REAR_ERROR              0x7F1
 
 #define QUEUE_SIZE_RXCAN_1			16
 #define QUEUE_SIZE_RXCAN_2			16

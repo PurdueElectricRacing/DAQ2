@@ -32,7 +32,7 @@
 #define max1161x_REF_VDD      0x00
 #define max1161x_REF_EXTERNAL 0x02
 #define max1161x_REF_INTERNAL 0x04
-#define max1161x_ANANLOG_IN   0x00
+#define max1161x_ANALOG_IN    0x00
 #define max1161x_REF_OUT      0x02
 #define max1161x_INT_REF_ON   0x01
 
@@ -41,7 +41,6 @@ typedef struct
 	uint16_t devAddress;
 	I2C_HandleTypeDef *wireIface;
 	uint8_t broke;
-	uint8_t enable;
 } max1161x;
 
 max1161x new_max1161x              (void);
@@ -55,4 +54,3 @@ uint8_t max1161x_ADC_Read          (max1161x*, uint8_t, uint16_t*);
 uint8_t max1161x_Scan              (max1161x*, uint16_t*);
 
 #endif
-

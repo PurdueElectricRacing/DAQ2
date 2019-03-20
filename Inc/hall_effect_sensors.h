@@ -33,7 +33,6 @@ typedef struct
 	uint32_t 			time_n_minus_1;
 	uint32_t			speed;
 	uint8_t       error;
-	uint8_t       enable;
 } hall_sensor;
 
 enum HALL_SENSOR
@@ -62,7 +61,7 @@ inline uint32_t calculate_flow_rate(uint32_t dt);
 //Working Voltage: 5 to 18VDC
 //Max current draw: 15mA @ 5V
 //Working Flow Rate: 1 to 30 Liters/Minute
-//Working Temperature range: -25 to 80°C
+//Working Temperature range: -25 to 80ï¿½C
 //Working Humidity Range: 35%-80% RH
 //Maximum water pressure: 2.0 MPa
 //Output duty cycle: 50% +-10%

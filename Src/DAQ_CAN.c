@@ -227,7 +227,7 @@ void taskTX_VCAN()
 ***************************************************************************/
 void taskRX_DCANProcess()
 {
-
+	
 }
 
 void taskRX_VCANProcess()
@@ -249,13 +249,7 @@ void taskRX_VCANProcess()
 					process_sensor_enable(rx.Data);
 					break;
 				}
-
 			}
-
 		}
 	}
 }
-
-
-
-
