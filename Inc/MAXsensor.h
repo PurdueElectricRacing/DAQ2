@@ -11,6 +11,8 @@
 #include "max1161x.h"
 #include "daq2.h"
 
+#define FLOW_SPEED_RESISTOR_OHM  10000
+
 
 typedef struct {
 	uint8_t pin; 					// Pin on the MAX Chip

@@ -132,8 +132,8 @@ void send_lca_data();
 void send_drop_link_data();
 void send_push_rod_data();
 void send_tire_temp_data();
-void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t * sensor_group);
-void error_task(uint16_t frequency);
+void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t mask);
+void error_task();
 void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len);
 
 #endif /* DAQ2_H_ */

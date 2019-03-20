@@ -268,7 +268,7 @@ void taskRX_VCANProcess()
 				}
 				case ID_DASHBOARD:
 				{
-					route_to_vcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
+					route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
 					break;
 				}
 			}

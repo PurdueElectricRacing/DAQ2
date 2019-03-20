@@ -45,8 +45,8 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 	init_hall_sensor(&g_right_wheel, htim, RIGHT_WHEEL_CHANNEL);
 
 	// init the max chips
-	max1161x_Init(g_max11614, hi2c, MAX11614_ADDR, 7);
-	max1161x_Init(g_max11616, hi2c, MAX11616_ADDR, 7);
+	max1161x_Init(&g_max11614, hi2c, MAX11614_ADDR, 7);
+	max1161x_Init(&g_max11616, hi2c, MAX11616_ADDR, 7);
 
 	init_max_arrays();
 
@@ -165,7 +165,7 @@ void start_daq2()
 	}
 	else
 	{
-		xTaskCreate(error_task, "ERROR TASK", 256, 1, NULL);
+		xTaskCreate(error_task, "ERROR TASK", 256, NULL, 1, NULL);
 	}
 #else
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", 256, NULL, 1, NULL);
@@ -173,7 +173,7 @@ void start_daq2()
 
 	if (g_left_wheel.error || g_right_wheel.error || g_max11614.broke || g_max11616.broke)
 	{
-		xTaskCreate(error_task, "ERROR TASK", 256, 1, NULL);
+		xTaskCreate(error_task, "ERROR TASK", 256, NULL, 1, NULL);
 	}
 
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
@@ -187,8 +187,8 @@ void start_daq2()
  *
  * @return none
  * */
-void error_task()
-{
+void error_task(){
+
 	while (PER == GREAT)
 	{
 		CanTxMsgTypeDef tx;
@@ -219,10 +219,15 @@ void error_task()
  *
  * @return none
  * */
-void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t * enable_bit)
+void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t mask)
 {
-	uint8_t prev_enable = *enable_bit;
-	*enable_bit = enable;
+	// get the previous state of the enable bit
+	uint8_t prev_enable = daq.can_enable & mask;
+	// new status of enable bit
+	// example: can_enable == 0b11111111
+	// 					enable     == 0b00000000
+	//          new_enable =  0b11111111 ^ 0b00000000 == 0b11111111
+	daq.can_enable = enable ^ daq.can_enable;
 
 	if (enable && !prev_enable)
 	{
@@ -544,17 +549,17 @@ void wheel_speed_zero_task()
  * */
 void process_sensor_enable(uint8_t * data)
 {
-	set_sensor_capture(data[0] & SPEED_CAN_MASK, send_wheel_speed_task, &daq.can_enable & SPEED_CAN_MASK);
-	set_sensor_capture(data[0] & UCA_CAN_MASK, send_uca_data, &daq.can_enable & UCA_CAN_MASK);
-	set_sensor_capture(data[0] & LCA_CAN_MASK, send_lca_data, &daq.can_enable & LCA_CAN_MASK);
-	set_sensor_capture(data[0] & SHOCK_CAN_MASK, send_shock_data, &daq.can_enable & SHOCK_CAN_MASK);
-	set_sensor_capture(data[0] & ARB_TORS_CAN_MASK, send_arb_torsional_data, &daq.can_enable & ARB_TORS_CAN_MASK);
-	set_sensor_capture(data[0] & PUSH_ROD_CAN_MASK, send_push_rod_data, &daq.can_enable & PUSH_ROD_CAN_MASK);
+	set_sensor_capture(data[0] & SPEED_CAN_MASK, send_wheel_speed_task, SPEED_CAN_MASK);
+	set_sensor_capture(data[0] & UCA_CAN_MASK, send_uca_data, UCA_CAN_MASK);
+	set_sensor_capture(data[0] & LCA_CAN_MASK, send_lca_data, LCA_CAN_MASK);
+	set_sensor_capture(data[0] & SHOCK_CAN_MASK, send_shock_data, SHOCK_CAN_MASK);
+	set_sensor_capture(data[0] & ARB_TORS_CAN_MASK, send_arb_torsional_data, ARB_TORS_CAN_MASK);
+	set_sensor_capture(data[0] & PUSH_ROD_CAN_MASK, send_push_rod_data, PUSH_ROD_CAN_MASK);
 
 	#ifdef REAR_DAQ
-		set_sensor_capture(data[0] & COOLANT_CAN_MASK, send_coolant_data_task, &daq.can_enable & COOLANT_CAN_MASK);
+		set_sensor_capture(data[0] & COOLANT_CAN_MASK, send_coolant_data_task, COOLANT_CAN_MASK);
 	#else
-		set_sensor_capture(data[0] & DROP_LINK_CAN_MASK, send_drop_link_data, &daq.can_enable & DROP_LINK_CAN_MASK);
+		set_sensor_capture(data[0] & DROP_LINK_CAN_MASK, send_drop_link_data, DROP_LINK_CAN_MASK);
 	#endif
 }
 
