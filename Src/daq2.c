@@ -5,9 +5,9 @@
  *      Author: Chris
  */
 
+#include <maxsensor.h>
 #include "daq2.h"
 #include "DAQ_CAN.h"
-#include "maxsensor.h"
 #include "max1161x.h"
 
 extern volatile hall_sensor g_right_wheel;
@@ -57,6 +57,7 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 	DCANFilterConfig();
 	VCANFilterConfig();
 }
+
 /**
  * Programmer: fallon2@purdue.edu - Chris Fallon
  *
@@ -145,7 +146,7 @@ void start_daq2()
 
 	if (!g_max11614.broke && !g_max11616.broke)
 	{
-		xTaskCreate(read_adc_task, "ADC TASK", 256, NULL, 1, NULL);
+//		xTaskCreate(read_adc_task, "ADC TASK", 256, NULL, 1, NULL);
 		xTaskCreate(send_uca_data, "UCA DATA TASK", 256, NULL, 1, NULL);
 		xTaskCreate(send_lca_data, "LCA_DATA_TASK", 256, NULL, 1, NULL);
 		xTaskCreate(send_shock_data, "SHOCK DATA TASK", 256, NULL, 1, NULL);

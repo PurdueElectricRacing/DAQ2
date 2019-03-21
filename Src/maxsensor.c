@@ -6,7 +6,7 @@
  */
 #include "max1161x.h"
 #include <math.h>
-#include "maxsensor.h"
+#include <maxsensor.h>
 
 /**
  * @brief      Calculates the temperature of the Inline Flow Temp Sensor
