@@ -152,11 +152,12 @@ void taskTX_DCAN()
 			header.IDE = tx.IDE;
 			header.RTR = tx.RTR;
 			header.StdId = tx.StdId;
-			header.TransmitGlobalTime = DISABLE;
+			header.TransmitGlobalTime = ENABLE;
 			uint32_t mailbox;
 			while (!HAL_CAN_GetTxMailboxesFreeLevel(daq.dcan)); // while mailboxes not free
 			HAL_CAN_AddTxMessage(daq.dcan, &header, tx.Data, &mailbox);
-			HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
+			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+//			vTaskDelay(1000);
 		}
 	}
 }
@@ -195,10 +196,11 @@ void taskTX_VCAN()
 			header.IDE = tx.IDE;
 			header.RTR = tx.RTR;
 			header.StdId = tx.StdId;
-			header.TransmitGlobalTime = DISABLE;
+			header.TransmitGlobalTime = ENABLE;
 			uint32_t mailbox;
 			while (!HAL_CAN_GetTxMailboxesFreeLevel(daq.vcan)); // while mailboxes not free
 			HAL_CAN_AddTxMessage(daq.vcan, &header, tx.Data, &mailbox);
+			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 		}
 	}
 }

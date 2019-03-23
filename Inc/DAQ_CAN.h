@@ -22,6 +22,7 @@
 #define ID_R_TIRE_TEMP					0x711
 
 #define ID_R_COOLANT						0x720
+#define ID_R_COOLANT_SPD        0x721
 
 // IDs for shock pots
 #define ID_F_SHOCKS							0x730

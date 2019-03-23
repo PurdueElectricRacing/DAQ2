@@ -27,7 +27,8 @@
 	#define UCA_ID           ID_R_UCA
 	#define ARB_TORSIONAL_ID ID_R_ARB
 	#define TIRE_TEMP_ID     ID_R_TIRE_TEMP
-	#define PUSH_ROD_ID      ID_F_STEER_PUSH
+	#define PUSH_ROD_ID      ID_R_TIE_PUSH
+  #define ERROR_ID         REAR_ERROR
 #else
  	#define ID_WHEEL_SPEED   ID_F_WHEEL_SPEED
 	#define SHOCK_POT_ID     ID_F_SHOCKS
@@ -35,9 +36,11 @@
 	#define UCA_ID           ID_F_UCA
 	#define ARB_TORSIONAL_ID ID_F_ARB
 	#define TIRE_TEMP_IP     ID_F_TIRE_TEMP
-	#define PUSH_ROD_ID      ID_R_TIE_PUSH
+	#define PUSH_ROD_ID      ID_F_STEER_PUSH
+  #define ERROR_ID         FRONT_ERROR
 #endif
 
+// mask bits for parsing the CAN toggle message
 #define SPEED_CAN_MASK     0b10000000
 #define UCA_CAN_MASK       0b01000000
 #define LCA_CAN_MASK       0b00100000
@@ -47,14 +50,22 @@
 #define COOLANT_CAN_MASK   0b00000010
 #define DROP_LINK_CAN_MASK 0b00000001
 
-#define MUX_READ_PERIOD       10 / portTICK_RATE_MS 	// 100hz
-#define HEARTBEAT_PERIOD      250 / portTICK_RATE_MS	// 2.5hz
-#define WHEEL_SPD_SEND_PERIOD 10 / portTICK_RATE_MS  // 100hz
-#define COOLANT_DATA_PERIOD   10 / portTICK_RATE_MS
-#define SPEED_ZERO_TIMEOUT    100 / portTICK_RATE_MS	// 1hz
-#define SPEED_ZERO_PERIOD		  250 / portTICK_RATE_MS	// .25hz
-#define REFRESH_RATE          10 / portTICK_RATE_MS
-#define ERROR_MSG_PERIOD      10 / portTICK_RATE_MS
+// enable all by default
+#define ENABLE_CAN_TX 0xFF
+
+#define MUX_READ_PERIOD       100 	// 100hz
+#define HEARTBEAT_PERIOD      250	// 2.5hz
+#define WHEEL_SPD_SEND_PERIOD 100  // 100hz
+#define COOLANT_DATA_PERIOD   100
+#define SPEED_ZERO_TIMEOUT    100	// 1hz
+#define SPEED_ZERO_PERIOD		  250	// .25hz
+#define REFRESH_RATE          100
+#define ERROR_MSG_PERIOD      100
+
+#define ADC_READ_STACK       128
+#define DAQ_TASK_STACK       128
+#define CAN_TX_TASK_STACK    128
+
 
 // defines match both the location in the array and also the channel on each MAX chip
 // MAX11616 DEVICES BELOW
@@ -99,6 +110,9 @@
 	#define ERROR_ID FRONT_ERROR
 #endif
 
+#define EXTRACT_MSB(data) ((data >> 8) & 0xFF)
+#define EXTRACT_LSB(data) ((data) & 0xFF)
+
 typedef struct DAQ_t
 {
 	CAN_HandleTypeDef * vcan;
@@ -112,13 +126,29 @@ typedef struct DAQ_t
 	uint8_t can_enable;
 }DAQ_t;
 
+enum task_t
+{
+	adc_task          = 0,
+	uca_task          = 1,
+	lca_task          = 2,
+	shock_task        = 3,
+	arb_tors_task     = 4,
+	push_rod_task     = 5,
+	wheel_speed_task  = 6,
+  speed_0_task      = 7,
+	cool_task         = 8,
+	drop_link_task    = 8,
+};
+
+#define NUM_TASKS 9
+
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan);
 void start_daq2();
 void init_max_arrays();
 
 void task_heartbeat();
 
-void read_adc_task(void);
+void read_adc_task();
 void process_sensor_enable(uint8_t * data);
 void wheel_speed_zero_task();
 void set_wheel_speed_capture(uint8_t enable);
@@ -132,7 +162,7 @@ void send_lca_data();
 void send_drop_link_data();
 void send_push_rod_data();
 void send_tire_temp_data();
-void set_sensor_capture(uint8_t enable, TaskFunction_t function, uint8_t mask);
+void set_sensor_capture(uint8_t enable, TaskHandle_t function, uint8_t mask);
 void error_task();
 void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len);
 

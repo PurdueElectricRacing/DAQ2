@@ -144,13 +144,23 @@ int main(void)
 
   if (HAL_CAN_Start(&hcan1) != HAL_OK)
 	{
-  	HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
+  	while(1)
+  	{
+    	HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
+    	HAL_Delay(1000);
+  	}
 	}
 
   if (HAL_CAN_Start(&hcan2) != HAL_OK)
 	{
-		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+  	while(1)
+		{
+			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+			HAL_Delay(1000);
+		}
 	}
+//	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
+
 
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING);
@@ -608,6 +618,14 @@ void _Error_Handler(char *file, int line)
   /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
+  	while(1)
+		{
+			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+			HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
+			HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
+			HAL_GPIO_TogglePin(GPIOD, LD6_Pin);
+			HAL_Delay(500);
+		}
   }
   /* USER CODE END Error_Handler_Debug */
 }
