@@ -8,7 +8,8 @@
 #include "DAQ_CAN.h"
 
 extern volatile DAQ_t daq;
-
+extern xSemaphoreHandle g_dcan_sem;
+extern xSemaphoreHandle g_vcan_sem;
 /***************************************************************************
 *
 *     Function Information

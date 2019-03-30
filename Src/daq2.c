@@ -20,6 +20,8 @@ max1161x g_max11614;
 max1161x g_max11616;
 sensor_t g_max11614_sensors[MAX11614_CHANNELS];
 sensor_t g_max11616_sensors[MAX11616_CHANNELS];
+xSemaphoreHandle g_dcan_sem;
+xSemaphoreHandle g_vcan_sem;
 
 TaskHandle_t g_tasks[NUM_TASKS];
 
@@ -35,6 +37,8 @@ TaskHandle_t g_tasks[NUM_TASKS];
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1,
 						TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan)
 {
+	g_dcan_sem = xSemaphoreCreateMutex();
+	g_vcan_sem = xSemaphoreCreateMutex();
 	daq.dcan = dcan;
 	daq.vcan = vcan;
 	// create queues for recieve and transmit
@@ -93,30 +97,30 @@ void init_max_arrays()
 	}
 
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].pin = STEER_TIE_ROD_RIGHT;
-	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[STEER_TIE_ROD_LEFT].pin = STEER_TIE_ROD_LEFT;
-	g_max11614_sensors[STEER_TIE_ROD_LEFT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[STEER_TIE_ROD_LEFT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[PUSH_ROD_RIGHT].pin = PUSH_ROD_RIGHT;
-	g_max11614_sensors[PUSH_ROD_RIGHT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[PUSH_ROD_RIGHT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[PUSH_ROD_LEFT].pin = PUSH_ROD_LEFT;
-	g_max11614_sensors[PUSH_ROD_LEFT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[PUSH_ROD_LEFT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[LCA_L_BACK].pin = LCA_L_BACK;
-	g_max11614_sensors[LCA_L_BACK].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[LCA_L_BACK].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[LCA_L_FRONT].pin = LCA_L_FRONT;
-	g_max11614_sensors[LCA_L_FRONT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[LCA_L_FRONT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[UCA_L_BACK].pin = UCA_L_BACK;
-	g_max11614_sensors[UCA_L_BACK].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[UCA_L_BACK].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[UCA_L_FRONT].pin = UCA_L_FRONT;
-	g_max11614_sensors[UCA_L_FRONT].read = maxsensor_Straingauge_Read;
+	g_max11614_sensors[UCA_L_FRONT].read = maxsensor_Shockpot_Read;
 
 	g_max11616_sensors[UCA_R_BACK].pin = UCA_R_BACK;
-	g_max11616_sensors[UCA_R_BACK].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[UCA_R_BACK].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[UCA_R_FRONT].pin = UCA_R_FRONT;
-	g_max11616_sensors[UCA_R_FRONT].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[UCA_R_FRONT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[LCA_R_FRONT].pin = LCA_R_FRONT;
-	g_max11616_sensors[LCA_R_FRONT].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[LCA_R_FRONT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[LCA_R_BACK].pin = LCA_R_BACK;
-	g_max11616_sensors[LCA_R_BACK].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[LCA_R_BACK].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[MOTOR_C_TEMP].pin = MOTOR_C_TEMP;
 	g_max11616_sensors[MOTOR_C_TEMP].read = maxsensor_Inlineflow_Read;
 	g_max11616_sensors[RAD_C_TEMP].pin = RAD_C_TEMP;
@@ -128,11 +132,11 @@ void init_max_arrays()
 	g_max11616_sensors[LEFT_SHOCK_POT].read = NULL;
 
 	g_max11616_sensors[ARB_DROPLINK_LEFT].pin = ARB_DROPLINK_LEFT;
-	g_max11616_sensors[ARB_DROPLINK_LEFT].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[ARB_DROPLINK_LEFT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[ARB_DROPLINK_RIGHT].pin = ARB_DROPLINK_RIGHT;
-	g_max11616_sensors[ARB_DROPLINK_RIGHT].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[ARB_DROPLINK_RIGHT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[ARB_TORSIONAL].pin = ARB_TORSIONAL;
-	g_max11616_sensors[ARB_TORSIONAL].read = maxsensor_Straingauge_Read;
+	g_max11616_sensors[ARB_TORSIONAL].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[RIGHT_SHOCK_POT].pin = RIGHT_SHOCK_POT;
 
 	g_max11616_sensors[RIGHT_SHOCK_POT].read = NULL;

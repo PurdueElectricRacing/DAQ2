@@ -39,7 +39,7 @@ uint8_t maxsensor_Inlineflow_Read(void * tempSensor_temp)
  */
 uint8_t maxsensor_Shockpot_Read(void * shockSensor_temp)
 {
-  sensor_t * strainSensor = (sensor_t *) strainSensor_temp;
+  sensor_t * strainSensor = (sensor_t *) shockSensor_temp;
   uint8_t status;
   uint16_t adcValue;
   uint8_t range = SHOCK_POT_TRAVEL_LENGTH; //maximum travel distance of shock Pot in millimeters
