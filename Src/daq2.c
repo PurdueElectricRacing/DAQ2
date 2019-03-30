@@ -148,11 +148,10 @@ void init_max_arrays()
  * */
 void start_daq2()
 {
-	// @TODO optimize stack size for each function
 	xTaskCreate(task_heartbeat, "HEARTBEAT", 128, NULL, 1, NULL);
 	xTaskCreate(taskTX_DCAN, "TX CAN DCAN", CAN_TX_TASK_STACK, NULL, 1, NULL);
 	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", CAN_TX_TASK_STACK, NULL, 1, NULL);
-	xTaskCreate(taskRX_VCANProcess, "RX VCAN", CAN_TX_TASK_STACK, NULL, 1, NULL);
+	xTaskCreate(taskRX_VCANProcess, "RX VCAN", 256, NULL, 1, NULL);
 
 	if (!g_max11614.broke && !g_max11616.broke)
 	{
@@ -204,6 +203,7 @@ void task_heartbeat()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 #ifdef DEBUG
 		uint8_t enable[1];
 	  enable[0] = 0b11111111;
@@ -238,6 +238,7 @@ void error_task()
 	CanTxMsgTypeDef tx;
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = ERROR_ID;
 		tx.IDE = CAN_ID_STD;
 		tx.RTR = CAN_RTR_DATA;
@@ -331,6 +332,7 @@ void send_shock_data()
 	CanTxMsgTypeDef tx;
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = SHOCK_POT_ID;
 		tx.Data[0] = (EXTRACT_MSB(g_max11616_sensors[LEFT_SHOCK_POT].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11616_sensors[LEFT_SHOCK_POT].value));
@@ -358,6 +360,7 @@ void send_arb_torsional_data()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = ARB_TORSIONAL_ID;
 		tx.Data[0] = (EXTRACT_MSB(g_max11614_sensors[ARB_TORSIONAL].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11614_sensors[ARB_TORSIONAL].value));
@@ -383,6 +386,7 @@ void send_uca_data()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = UCA_ID;
 		tx.Data[0] = (EXTRACT_MSB(g_max11614_sensors[UCA_L_FRONT].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11614_sensors[UCA_L_FRONT].value));
@@ -415,6 +419,7 @@ void send_lca_data()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = LCA_ID;
 		tx.Data[0] = (EXTRACT_MSB(g_max11614_sensors[LCA_L_FRONT].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11614_sensors[LCA_L_FRONT].value));
@@ -447,6 +452,7 @@ void send_drop_link_data()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = ID_F_DROP_LINKS;
 		tx.Data[0] = (EXTRACT_MSB(g_max11616_sensors[ARB_DROPLINK_LEFT].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11616_sensors[ARB_DROPLINK_LEFT].value));
@@ -475,6 +481,7 @@ void send_push_rod_data()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		tx.StdId = PUSH_ROD_ID;
 		tx.Data[0] = (EXTRACT_MSB(g_max11614_sensors[PUSH_ROD_RIGHT].value));
 		tx.Data[1] = (EXTRACT_LSB(g_max11614_sensors[PUSH_ROD_RIGHT].value));
@@ -509,6 +516,7 @@ void send_coolant_data_task()
 
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		temp.StdId = ID_R_COOLANT;
 	  temp.Data[0] = (EXTRACT_MSB(g_max11616_sensors[MOTOR_C_TEMP].value));
 		temp.Data[1] = (EXTRACT_LSB(g_max11616_sensors[MOTOR_C_TEMP].value));
@@ -549,6 +557,7 @@ void read_adc_task()
 	while (PER == GREAT)
 	{
 		uint8_t i = 0;
+		last_wake = xTaskGetTickCount();
 		// read every channel on all the MAX chips
 		// each object in the array has a function pointer depending on the sensor
 
@@ -579,6 +588,7 @@ void send_wheel_speed_task()
 	CanTxMsgTypeDef tx;
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		if (!g_left_wheel.error && !g_right_wheel.error)
 		{
 			tx.StdId = ID_WHEEL_SPEED;
@@ -613,9 +623,10 @@ void send_wheel_speed_task()
  * @return none*/
 void wheel_speed_zero_task()
 {
-	TickType_t last_wake = xTaskGetTickCount();
+	TickType_t last_wake;
 	while (PER == GREAT)
 	{
+		last_wake = xTaskGetTickCount();
 		if (uwTick - g_right_wheel.time_n > SPEED_ZERO_TIMEOUT)
 		{
 			g_right_wheel.speed = 0;
@@ -652,4 +663,5 @@ void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len)
 		tx.Data[i] = data[i];
  	}
 	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+	HAL_GPIO_WritePin(GPIOD, LD4_Pin, 0);
 }

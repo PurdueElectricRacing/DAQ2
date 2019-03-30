@@ -12,6 +12,7 @@
 #include "daq2.h"
 
 #define FLOW_SPEED_RESISTOR_OHM  10000
+#define SHOCK_POT_TRAVEL_LENGTH  75
 
 
 typedef struct {
@@ -22,6 +23,6 @@ typedef struct {
 }sensor_t;
 
 uint8_t maxsensor_Inlineflow_Read(void*); //Update function for Amphenol Flow Temp sensor
-uint8_t maxsensor_Straingauge_Read(void*); //Update function for LPPS-22-100
+uint8_t maxsensor_Shockpot_Read(void * shockSensor_temp);
 
 #endif /* MAXSENSOR_H_ */

@@ -106,10 +106,10 @@ void DCANFilterConfig(CAN_HandleTypeDef * hcan)
 void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 {
 	  CAN_FilterTypeDef FilterConf;
-	  FilterConf.FilterIdHigh =         ID_DASHBOARD << 5; // 2 num
-	  FilterConf.FilterIdLow =          ID_DASHBOARD << 5; // 0
-	  FilterConf.FilterMaskIdHigh =     0x7FF;       // 3
-	  FilterConf.FilterMaskIdLow =      0x7FF;       // 1
+	  FilterConf.FilterIdHigh =         0; // 2 num
+	  FilterConf.FilterIdLow =          0; // 0
+	  FilterConf.FilterMaskIdHigh =     0x0;       // 3
+	  FilterConf.FilterMaskIdLow =      0x0;       // 1
 	  FilterConf.FilterFIFOAssignment = CAN_FilterFIFO1;
 	  FilterConf.FilterBank = 1;
 	  FilterConf.FilterMode = CAN_FILTERMODE_IDLIST;
@@ -252,14 +252,18 @@ void taskRX_DCANProcess()
 void taskRX_VCANProcess()
 {
 	CanRxMsgTypeDef rx;  //CanRxMsgTypeDef to be received on the queue
-
+	TickType_t last_tick = xTaskGetTickCount();;
 	for(;;)
 	{
+//		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+		last_tick = xTaskGetTickCount();
+
 		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
-		if (xQueueReceive(daq.q_rx_vcan, &rx, portMAX_DELAY) == pdTRUE)
+		BaseType_t rcv = xQueueReceive(daq.q_rx_vcan, &rx, portMAX_DELAY);
+		if (rcv == pdTRUE)
 		{
 			HAL_GPIO_TogglePin(LD4_GPIO_Port, LD3_Pin);
-			//A CAN message has been recieved
+			//A CAN message has been received
 			//check what kind of message we received
 			switch (rx.StdId)
 			{
@@ -275,5 +279,7 @@ void taskRX_VCANProcess()
 				}
 			}
 		}
+		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+		vTaskDelayUntil(&last_tick, REFRESH_RATE);
 	}
 }
