@@ -18,7 +18,8 @@
 #define GREAT 1
 #define PER GREAT
 
-#define REAR_DAQ		// undefine this if this is the front DAQ board
+//#define REAR_DAQ		// undefine this if this is the front DAQ board
+//#define STRAIN_GAUGES
 
 #ifdef REAR_DAQ
 	#define ID_WHEEL_SPEED   ID_R_WHEEL_SPEED

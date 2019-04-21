@@ -8,8 +8,7 @@
 #include "DAQ_CAN.h"
 
 extern volatile DAQ_t daq;
-extern xSemaphoreHandle g_dcan_sem;
-extern xSemaphoreHandle g_vcan_sem;
+
 /***************************************************************************
 *
 *     Function Information
@@ -79,7 +78,7 @@ void DCANFilterConfig(CAN_HandleTypeDef * hcan)
 	  FilterConf.FilterMaskIdLow =      0x7fe;       // 1
 	  FilterConf.FilterFIFOAssignment = CAN_FilterFIFO0;
 	  FilterConf.FilterBank = 0;
-	  FilterConf.FilterMode = CAN_FILTERMODE_IDLIST;
+	  FilterConf.FilterMode = CAN_FILTERMODE_IDMASK;
 	  FilterConf.FilterScale = CAN_FILTERSCALE_16BIT;
 	  FilterConf.FilterActivation = ENABLE;
 	  HAL_CAN_ConfigFilter(hcan, &FilterConf);
@@ -113,7 +112,7 @@ void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 	  FilterConf.FilterMaskIdLow =      0x0;       // 1
 	  FilterConf.FilterFIFOAssignment = CAN_FilterFIFO1;
 	  FilterConf.FilterBank = 1;
-	  FilterConf.FilterMode = CAN_FILTERMODE_IDLIST;
+	  FilterConf.FilterMode = CAN_FILTERMODE_IDMASK;
 	  FilterConf.FilterScale = CAN_FILTERSCALE_16BIT;
 	  FilterConf.FilterActivation = ENABLE;
 	  HAL_CAN_ConfigFilter(hcan, &FilterConf);
@@ -234,15 +233,14 @@ void taskRX_DCANProcess()
 	while (PER == GREAT)
 	{
 		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
-		if (xQueueReceive(daq.q_rx_dcan, &rx, portMAX_DELAY) == pdTRUE)
+		if (xQueueReceive(daq.q_rx_dcan, &rx, (TickType_t) 5) == pdTRUE)
 		{
-			//A CAN message has been recieved
+			//A CAN message has been received
 			//check what kind of message we received
 			switch (rx.StdId)
 			{
 				case ID_DASHBOARD:
 				{
-
 					break;
 				}
 			}
@@ -250,6 +248,7 @@ void taskRX_DCANProcess()
 	}
 }
 
+// TODO move to one rx process
 void taskRX_VCANProcess()
 {
 	CanRxMsgTypeDef rx;  //CanRxMsgTypeDef to be received on the queue
@@ -258,17 +257,16 @@ void taskRX_VCANProcess()
 	{
 //		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
 		last_tick = xTaskGetTickCount();
+		HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
 
 		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
-		BaseType_t rcv = xQueueReceive(daq.q_rx_vcan, &rx, portMAX_DELAY);
-		if (rcv == pdTRUE)
+		if (xQueueReceive(daq.q_rx_vcan, &rx, (TickType_t) 5) == pdTRUE)
 		{
-			HAL_GPIO_TogglePin(LD4_GPIO_Port, LD3_Pin);
 			//A CAN message has been received
 			//check what kind of message we received
 			switch (rx.StdId)
 			{
-				case	ID_ENABLE_DAQ:
+				case ID_ENABLE_DAQ:
 				{
 					process_sensor_enable(rx.Data);
 					break;
@@ -279,8 +277,10 @@ void taskRX_VCANProcess()
 					break;
 				}
 			}
+//			route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
 		}
-		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-		vTaskDelayUntil(&last_tick, REFRESH_RATE);
-	}
+//		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+		vTaskDelayUntil(&last_tick, 1000);
+		}
 }
+

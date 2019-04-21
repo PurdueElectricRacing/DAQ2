@@ -20,8 +20,7 @@ max1161x g_max11614;
 max1161x g_max11616;
 sensor_t g_max11614_sensors[MAX11614_CHANNELS];
 sensor_t g_max11616_sensors[MAX11616_CHANNELS];
-xSemaphoreHandle g_dcan_sem;
-xSemaphoreHandle g_vcan_sem;
+
 
 TaskHandle_t g_tasks[NUM_TASKS];
 
@@ -37,8 +36,6 @@ TaskHandle_t g_tasks[NUM_TASKS];
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1,
 						TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan)
 {
-	g_dcan_sem = xSemaphoreCreateMutex();
-	g_vcan_sem = xSemaphoreCreateMutex();
 	daq.dcan = dcan;
 	daq.vcan = vcan;
 	// create queues for recieve and transmit
@@ -153,18 +150,21 @@ void init_max_arrays()
 void start_daq2()
 {
 	xTaskCreate(task_heartbeat, "HEARTBEAT", 128, NULL, 1, NULL);
-	xTaskCreate(taskTX_DCAN, "TX CAN DCAN", CAN_TX_TASK_STACK, NULL, 1, NULL);
-	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", CAN_TX_TASK_STACK, NULL, 1, NULL);
+	xTaskCreate(taskTX_DCAN, "TX CAN DCAN", 256, NULL, 1, NULL);
+	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", 256, NULL, 1, NULL);
 	xTaskCreate(taskRX_VCANProcess, "RX VCAN", 256, NULL, 1, NULL);
 
 	if (!g_max11614.broke && !g_max11616.broke)
 	{
+		xTaskCreate(send_shock_data, "SHOCK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[shock_task]);
+#ifdef STRAIN_GAUGES
 		xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
 		xTaskCreate(send_uca_data, "UCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[uca_task]);
 		xTaskCreate(send_lca_data, "LCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[lca_task]);
-		xTaskCreate(send_shock_data, "SHOCK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[shock_task]);
+
 		xTaskCreate(send_arb_torsional_data, "ARB TORSIONAL DATA", DAQ_TASK_STACK, NULL, 1, &g_tasks[arb_tors_task]);
 		xTaskCreate(send_push_rod_data, "PUSH ROD DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[push_rod_task]);
+#endif
 	}
 	if (!g_left_wheel.error && !g_right_wheel.error)
 	{
@@ -181,7 +181,7 @@ void start_daq2()
 	{
 		xTaskCreate(error_task, "ERROR TASK", DAQ_TASK_STACK, NULL, 1, NULL);
 	}
-#else
+#elif !defined(REAR_DAQ) && defined(STRAIN_GAUGES)
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[drop_link_task]);
 #endif
 
