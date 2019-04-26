@@ -156,9 +156,9 @@ void start_daq2()
 
 	if (!g_max11614.broke && !g_max11616.broke)
 	{
+    xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
 		xTaskCreate(send_shock_data, "SHOCK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[shock_task]);
 #ifdef STRAIN_GAUGES
-		xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
 		xTaskCreate(send_uca_data, "UCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[uca_task]);
 		xTaskCreate(send_lca_data, "LCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[lca_task]);
 
