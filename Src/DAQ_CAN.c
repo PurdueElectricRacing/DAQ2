@@ -106,7 +106,7 @@ void DCANFilterConfig(CAN_HandleTypeDef * hcan)
 void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 {
 	  CAN_FilterTypeDef FilterConf;
-	  FilterConf.FilterIdHigh =         0; // 2 num
+	  FilterConf.FilterIdHigh =         ID_DASHBOARD << 5; // 2 num
 	  FilterConf.FilterIdLow =          0; // 0
 	  FilterConf.FilterMaskIdHigh =     0x0;       // 3
 	  FilterConf.FilterMaskIdLow =      0x0;       // 1
