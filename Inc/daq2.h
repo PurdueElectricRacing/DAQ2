@@ -18,7 +18,7 @@
 #define GREAT 1
 #define PER GREAT
 
-//#define REAR_DAQ		// undefine this if this is the front DAQ board
+#define REAR_DAQ		// undefine this if this is the front DAQ board
 //#define STRAIN_GAUGES
 
 #ifdef REAR_DAQ
@@ -55,7 +55,7 @@
 #define ENABLE_CAN_TX 0xFF
 
 #define MUX_READ_PERIOD       100 	// 100hz
-#define HEARTBEAT_PERIOD      250	// 2.5hz
+#define HEARTBEAT_PERIOD      1000	// 1hz
 #define WHEEL_SPD_SEND_PERIOD 100  // 100hz
 #define COOLANT_DATA_PERIOD   100
 #define SPEED_ZERO_TIMEOUT    100	// 1hz

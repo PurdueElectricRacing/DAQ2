@@ -11,6 +11,8 @@
 #include "max1161x.h"
 #include <string.h>
 
+void send_heartbeat(uint8_t module);
+
 extern volatile hall_sensor g_right_wheel;
 extern volatile hall_sensor g_left_wheel;
 extern volatile hall_sensor g_c_flow;
@@ -59,8 +61,8 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 		init_hall_sensor(&g_c_flow, htim, C_FLOW_CHANNEL);
 	#endif
 
-	DCANFilterConfig();
-	VCANFilterConfig();
+	DCANFilterConfig(dcan);
+	VCANFilterConfig(vcan);
 }
 
 /**
@@ -222,6 +224,12 @@ void task_heartbeat()
 //				HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
 			}
 		}
+#endif
+
+#ifdef REAR_DAQ
+		send_heartbeat(0);
+#else
+		send_heartbeat(1);
 #endif
 		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		vTaskDelayUntil(&last_wake, HEARTBEAT_PERIOD);
@@ -668,4 +676,15 @@ void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len)
  	}
 	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 	HAL_GPIO_WritePin(GPIOD, LD4_Pin, 0);
+}
+
+void send_heartbeat(uint8_t module) {
+  CanTxMsgTypeDef tx;
+    tx.StdId = 0x7F2;
+    tx.DLC = 1;
+    tx.IDE = CAN_ID_STD;
+    tx.RTR = CAN_RTR_DATA;
+    tx.Data[0] = module;
+    xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
+    xQueueSendToBack(daq.q_tx_vcan, &tx, 100);
 }

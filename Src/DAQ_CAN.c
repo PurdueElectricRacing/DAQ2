@@ -273,7 +273,9 @@ void taskRX_VCANProcess()
 				}
 				case ID_DASHBOARD:
 				{
+#ifdef REAR_DAQ
 					route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
+#endif
 					break;
 				}
 			}
