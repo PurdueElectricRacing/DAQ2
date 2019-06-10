@@ -157,7 +157,7 @@ void taskTX_DCAN()
 			while (!HAL_CAN_GetTxMailboxesFreeLevel(daq.dcan)); // while mailboxes not free
 			HAL_CAN_AddTxMessage(daq.dcan, &header, tx.Data, &mailbox);
 			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
-//			vTaskDelay(1000);
+			vTaskDelay(10);
 		}
 	}
 }

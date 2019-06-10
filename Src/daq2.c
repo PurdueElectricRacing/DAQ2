@@ -95,6 +95,7 @@ void init_max_arrays()
 		g_max11616_sensors[i].max = &g_max11616;
 	}
 
+	//to disable comment out the pin and the read
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].pin = STEER_TIE_ROD_RIGHT;
 	g_max11614_sensors[STEER_TIE_ROD_RIGHT].read = maxsensor_Shockpot_Read;
 	g_max11614_sensors[STEER_TIE_ROD_LEFT].pin = STEER_TIE_ROD_LEFT;
