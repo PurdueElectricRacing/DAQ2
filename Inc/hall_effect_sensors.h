@@ -45,9 +45,9 @@ enum HALL_SENSOR
 void set_zero(hall_sensor * sensor, uint32_t zero_time);
 void init_hall_sensor(volatile hall_sensor * sensor, TIM_HandleTypeDef *htim, uint32_t channel);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
-void inline calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel);
-inline uint32_t calculate_wheel_speed(uint32_t dt);
-inline uint32_t calculate_flow_rate(uint32_t dt);
+void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel);
+uint32_t calculate_wheel_speed(uint32_t dt);
+uint32_t calculate_flow_rate(uint32_t dt);
 
 
 

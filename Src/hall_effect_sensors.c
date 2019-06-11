@@ -15,7 +15,9 @@
 
 extern volatile hall_sensor g_right_wheel;
 extern volatile hall_sensor g_left_wheel;
-extern volatile hall_sensor g_c_flow;
+#ifdef REAR_DAQ
+  extern volatile hall_sensor g_c_flow;
+#endif
 
 
 /**
@@ -78,7 +80,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
  * @return: none
  * */
 
-void inline calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
+void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
 {
 	if (sensor->error)
 	{
@@ -108,7 +110,7 @@ void inline calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t cha
  *
  * @return: calculated wheel speed
  * */
-inline uint32_t calculate_wheel_speed(uint32_t dt)
+uint32_t calculate_wheel_speed(uint32_t dt)
 {
 	//if the time delta > 0, then we calculate speed, otherwise we divide by 0
 	 float speed = ((TOOTH_COUNT * MILLIS_TO_MINUTES * ( TOOTH_ANGLE / dt) ) / FULL_CIRCLE);
@@ -122,7 +124,7 @@ inline uint32_t calculate_wheel_speed(uint32_t dt)
  *
  * @return: calculated flow rate
  * */
-inline uint32_t calculate_flow_rate(uint32_t dt)
+uint32_t calculate_flow_rate(uint32_t dt)
 {
 	// ((pulses per millis) * 1000) = HZ
 	// HZ / 7.5 = L/MIN
