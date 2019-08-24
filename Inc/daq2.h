@@ -141,7 +141,28 @@ enum task_t
 	drop_link_task    = 8,
 };
 
+enum rinehart_ids
+{
+  TEMP1 = 0x0A0,
+	TEMP2 = 0x0A1,
+	TEMP3 = 0x0A2,
+	ANALOG_INPUT_VOLTAGES = 0x0A3,
+	DIGITAL_INPUT_STATUS  = 0x0A4,
+	MOTOR_POSITION_INFO   = 0x0A5,
+	CURRENT_INFO = 0x0A6,
+	VOLTAGE_INFO = 0x0A7,
+	FLUX_INFO    = 0x0A8,
+  INTERNAL_VOLTAGES = 0x0A9,
+	INTERNAL_STATES   = 0x0AA,
+	FAULT_CODES       = 0x0AB,
+	TORQUE_TIMER_INFO = 0x0AC,
+	MOD_INDEX_FLUX_WEAK_OUT_INFO = 0x0AD,
+  FIRMWARE_INFO = 0x0AE,
+} rinehart_ids;
+
 #define NUM_TASKS 9
+
+void send_heartbeat(uint8_t module);
 
 void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_HandleTypeDef * hi2c1, TIM_HandleTypeDef * htim, CAN_HandleTypeDef * vcan, CAN_HandleTypeDef * dcan);
 void start_daq2();

@@ -4,7 +4,6 @@
  *  Created on: Feb 9, 2019
  *      Author: halowens
  */
-#include "max1161x.h"
 #include <math.h>
 #include "maxsensor.h"
 

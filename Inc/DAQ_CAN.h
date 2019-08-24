@@ -9,7 +9,6 @@
 #define DAQ_CAN_H_
 
 #include "daq2.h"
-
 #define ID_PEDALBOX1						0x500
 #define ID_PEDALBOX2						0x501
 

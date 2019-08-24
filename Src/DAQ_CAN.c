@@ -106,10 +106,10 @@ void DCANFilterConfig(CAN_HandleTypeDef * hcan)
 void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 {
 	  CAN_FilterTypeDef FilterConf;
-	  FilterConf.FilterIdHigh =         ID_DASHBOARD << 5; // 2 num
+	  FilterConf.FilterIdHigh =         0; // 2 num
 	  FilterConf.FilterIdLow =          0; // 0
-	  FilterConf.FilterMaskIdHigh =     0x0;       // 3
-	  FilterConf.FilterMaskIdLow =      0x0;       // 1
+	  FilterConf.FilterMaskIdHigh =     0;       // 3
+	  FilterConf.FilterMaskIdLow =      0;       // 1
 	  FilterConf.FilterFIFOAssignment = CAN_FilterFIFO1;
 	  FilterConf.FilterBank = 1;
 	  FilterConf.FilterMode = CAN_FILTERMODE_IDMASK;
@@ -253,36 +253,35 @@ void taskRX_VCANProcess()
 {
 	CanRxMsgTypeDef rx;  //CanRxMsgTypeDef to be received on the queue
 	TickType_t last_tick = xTaskGetTickCount();;
+	last_tick = xTaskGetTickCount();
+	long in_q;
 	for(;;)
 	{
 //		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-		last_tick = xTaskGetTickCount();
 		HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
+		in_q = xQueueReceive(daq.q_rx_vcan, &rx, (TickType_t) 5);
 
 		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
-		if (xQueueReceive(daq.q_rx_vcan, &rx, (TickType_t) 5) == pdTRUE)
+		if (in_q == pdTRUE)
 		{
 			//A CAN message has been received
 			//check what kind of message we received
-			switch (rx.StdId)
+			if (rx.StdId == ID_ENABLE_DAQ)
 			{
-				case ID_ENABLE_DAQ:
-				{
-					process_sensor_enable(rx.Data);
-					break;
-				}
-				case ID_DASHBOARD:
-				{
-#ifdef REAR_DAQ
-					route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
-#endif
-					break;
-				}
+				process_sensor_enable(rx.Data);
 			}
-//			route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
+#ifdef REAR_DAQ
+			else if (rx.StdId == ID_DASHBOARD ||
+					(rx.StdId >= TEMP1 && rx.StdId <= FIRMWARE_INFO))
+			{
+				route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
+				break;
+			}
+#endif
+
 		}
 //		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-		vTaskDelayUntil(&last_tick, 1000);
+		vTaskDelayUntil(&last_tick, 50);
 		}
 }
 

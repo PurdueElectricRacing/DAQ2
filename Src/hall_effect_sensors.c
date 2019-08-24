@@ -64,12 +64,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	{
 		calculate_and_store_speed(&g_right_wheel, RIGHT_WHEEL_CHANNEL);
 	}
+#ifdef REAR_DAQ
 	else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
 	{
-#ifdef REAR_DAQ
 		calculate_and_store_speed(&g_c_flow, C_FLOW_CHANNEL);
-#endif
 	}
+#endif
 }
 
 /**

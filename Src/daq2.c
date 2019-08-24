@@ -5,13 +5,9 @@
  *      Author: Chris
  */
 
-#include "maxsensor.h"
 #include "daq2.h"
-#include "DAQ_CAN.h"
-#include "max1161x.h"
 #include <string.h>
 
-void send_heartbeat(uint8_t module);
 
 extern volatile hall_sensor g_right_wheel;
 extern volatile hall_sensor g_left_wheel;
@@ -22,7 +18,6 @@ max1161x g_max11614;
 max1161x g_max11616;
 sensor_t g_max11614_sensors[MAX11614_CHANNELS];
 sensor_t g_max11616_sensors[MAX11616_CHANNELS];
-
 
 TaskHandle_t g_tasks[NUM_TASKS];
 

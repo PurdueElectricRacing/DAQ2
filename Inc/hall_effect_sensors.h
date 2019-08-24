@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "daq2.h"
 
 #define C_FLOW_CHANNEL  TIM_CHANNEL_1
 #define PULSE_PER_LITER 450
