@@ -16,8 +16,8 @@ uint8_t maxsensor_Inlineflow_Read(void * tempSensor_temp)
   sensor_t * tempSensor = (sensor_t *) tempSensor_temp;
   uint8_t status;
   uint16_t adcValue;
-  float vOut;
-  float resistance;
+  double vOut;
+  double resistance;
   uint16_t knownR = FLOW_SPEED_RESISTOR_OHM; //Resistance of resistor in front of the flow Sensor
 
   status = max1161x_ADC_Read(tempSensor->max, tempSensor->pin, &adcValue);
@@ -27,7 +27,8 @@ uint8_t maxsensor_Inlineflow_Read(void * tempSensor_temp)
 
   //Line of best fit calculated off of data in datasheet
   //Temperature = -26.689*ln(Resistance) + 272.279
-  tempSensor->value = -26.689 * log(resistance) + 272.279;
+  double temp = -26.689 * log(resistance) + 272.279;
+  tempSensor->value = temp * 100;
 
   return status;
 }

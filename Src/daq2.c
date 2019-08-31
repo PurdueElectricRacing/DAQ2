@@ -634,7 +634,7 @@ void read_adc_task()
 			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
 		}
 		vTaskDelayUntil(&last_wake, MUX_READ_PERIOD);
-//		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 	}
 }
 
