@@ -757,12 +757,13 @@ void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp
   uint16_t adcValue;
   double vOut;
   double resistance;
+  double scaler = 3.3 / ADC_VREF;
   uint16_t knownR = FLOW_SPEED_RESISTOR_OHM; //Resistance of resistor in front of the flow Sensor
 
   adcValue = temp_values[index];
 
-  vOut = (((double) adcValue) / 4095.0) * 4.73;
-  resistance = (-knownR * vOut) / (vOut - 4.73);
+  vOut = (((double) adcValue) * scaler / 4095.0) * ADC_VREF;
+  resistance = (-knownR * vOut) / (vOut - ADC_VREF);
 
   //Line of best fit calculated off of data in datasheet
   //Temperature = -26.689*ln(Resistance) + 272.279
