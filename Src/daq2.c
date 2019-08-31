@@ -757,7 +757,7 @@ void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp
   uint16_t adcValue;
   double vOut;
   double resistance;
-  double scaler = 3.3 / ADC_VREF;
+  double scaler = 3 / ADC_VREF;
   uint16_t knownR = FLOW_SPEED_RESISTOR_OHM; //Resistance of resistor in front of the flow Sensor
 
   adcValue = temp_values[index];

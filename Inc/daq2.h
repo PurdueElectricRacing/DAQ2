@@ -115,7 +115,7 @@
 #define EXTRACT_MSB(data) ((data >> 8) & 0xFF)
 #define EXTRACT_LSB(data) ((data) & 0xFF)
 
-#define ADC_VREF 4.94f
+#define ADC_VREF 5.0f
 
 typedef struct DAQ_t
 {

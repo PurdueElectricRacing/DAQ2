@@ -54,7 +54,7 @@
 #define REAR_ERROR              0x7F1
 
 #define QUEUE_SIZE_RXCAN_1			16
-#define QUEUE_SIZE_RXCAN_2			16
+#define QUEUE_SIZE_RXCAN_2			25
 #define QUEUE_SIZE_TXCAN_1			20
 #define QUEUE_SIZE_TXCAN_2			20
 
