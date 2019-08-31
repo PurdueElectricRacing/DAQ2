@@ -196,4 +196,6 @@ void set_sensor_capture(uint8_t enable, TaskHandle_t function, uint8_t mask);
 void error_task();
 void route_to_dcan(CanRxMsgTypeDef * rx);
 
+void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp_values);
+
 #endif /* DAQ2_H_ */

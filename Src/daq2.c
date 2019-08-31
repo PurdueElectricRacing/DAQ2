@@ -7,6 +7,7 @@
 
 #include "daq2.h"
 #include <string.h>
+#include "math.h"
 
 
 extern volatile hall_sensor g_right_wheel;
@@ -14,10 +15,13 @@ extern volatile hall_sensor g_left_wheel;
 extern volatile hall_sensor g_c_flow;
 extern volatile DAQ_t daq;
 extern uint32_t uwTick;
+extern ADC_HandleTypeDef hadc1;
 max1161x g_max11614;
 max1161x g_max11616;
 sensor_t g_max11614_sensors[MAX11614_CHANNELS];
 sensor_t g_max11616_sensors[MAX11616_CHANNELS];
+
+uint32_t temp_values[3];   // raw ADC values
 
 TaskHandle_t g_tasks[NUM_TASKS];
 
@@ -60,6 +64,8 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 
 	DCANFilterConfig(dcan);
 	VCANFilterConfig(vcan);
+
+
 }
 
 /**
@@ -118,14 +124,17 @@ void init_max_arrays()
 	g_max11616_sensors[LCA_R_FRONT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[LCA_R_BACK].pin = LCA_R_BACK;
 	g_max11616_sensors[LCA_R_BACK].read = maxsensor_Shockpot_Read;
+
 	g_max11616_sensors[MOTOR_C_TEMP].pin = MOTOR_C_TEMP;
 	g_max11616_sensors[MOTOR_C_TEMP].read = maxsensor_Inlineflow_Read;
+
 	g_max11616_sensors[RAD_C_TEMP].pin = RAD_C_TEMP;
 	g_max11616_sensors[RAD_C_TEMP].read = maxsensor_Inlineflow_Read;
+
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].pin = MOTOR_CONT_C_TEMP;
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].read = maxsensor_Inlineflow_Read;
-	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
 
+	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
 	g_max11616_sensors[LEFT_SHOCK_POT].read = NULL;
 
 	g_max11616_sensors[ARB_DROPLINK_LEFT].pin = ARB_DROPLINK_LEFT;
@@ -619,20 +628,28 @@ void read_adc_task()
 	TickType_t last_wake = xTaskGetTickCount();
 	while (PER == GREAT)
 	{
-		uint8_t i = 0;
 		last_wake = xTaskGetTickCount();
+	  HAL_ADC_Start_DMA(&hadc1, temp_values, 3);
+
 		// read every channel on all the MAX chips
 		// each object in the array has a function pointer depending on the sensor
-
-		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
+		for (uint8_t i = 0; i < 3; i++)
 		{
-			g_max11616_sensors[i].read(g_max11616_sensors[i].max);
+			inline_temp_read_ADC(&g_max11616_sensors[MOTOR_C_TEMP + i], i, temp_values);
 		}
 
-		for (i = 0; i < MAX11614_CHANNELS && !g_max11614_sensors[0].max->broke; i++)
-		{
-			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
-		}
+	  HAL_ADC_Stop_DMA(&hadc1);
+
+
+//		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
+//		{
+//			g_max11616_sensors[i].read(g_max11616_sensors[i].max);
+//		}
+//
+//		for (i = 0; i < MAX11614_CHANNELS && !g_max11614_sensors[0].max->broke; i++)
+//		{
+//			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
+//		}
 		vTaskDelayUntil(&last_wake, MUX_READ_PERIOD);
 //		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 	}
@@ -732,6 +749,26 @@ void route_to_dcan(CanRxMsgTypeDef * rx)
 
 	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 	HAL_GPIO_WritePin(GPIOD, LD4_Pin, 0);
+}
+
+void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp_values)
+{
+  sensor_t * tempSensor = (sensor_t *) tempSensor_temp;
+  uint16_t adcValue;
+  double vOut;
+  double resistance;
+  uint16_t knownR = FLOW_SPEED_RESISTOR_OHM; //Resistance of resistor in front of the flow Sensor
+
+  adcValue = temp_values[index];
+
+  vOut = (((double) adcValue) / 4095.0) * 4.73;
+  resistance = (-knownR * vOut) / (vOut - 4.73);
+
+  //Line of best fit calculated off of data in datasheet
+  //Temperature = -26.689*ln(Resistance) + 272.279
+  double r_ln = log(resistance);
+  double temp = -26.689 * r_ln + 272.279;
+  tempSensor->value = temp * 100;
 }
 
 void send_heartbeat(uint8_t module) {

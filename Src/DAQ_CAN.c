@@ -244,7 +244,7 @@ void taskRX_VCANProcess()
 			}
 
 #ifdef REAR_DAQ
-			else if (rx.StdId == ID_DASHBOARD)
+			else if (rx.StdId == ID_DASHBOARD || rx.StdId == ID_F_WHEEL_SPEED)
 			{
 				route_to_dcan(&rx);
 			}
