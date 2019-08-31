@@ -54,14 +54,15 @@
 // enable all by default
 #define ENABLE_CAN_TX 0xFF
 
-#define MUX_READ_PERIOD       100 	// 100hz
+#define MUX_READ_PERIOD       10 	// 100hz
 #define HEARTBEAT_PERIOD      1000	// 1hz
-#define WHEEL_SPD_SEND_PERIOD 100  // 100hz
-#define COOLANT_DATA_PERIOD   100
-#define SPEED_ZERO_TIMEOUT    100	// 1hz
-#define SPEED_ZERO_PERIOD		  250	// .25hz
-#define REFRESH_RATE          100
-#define ERROR_MSG_PERIOD      100
+#define WHEEL_SPD_SEND_PERIOD 20  // 50hz
+#define COOLANT_DATA_PERIOD   10  // 100hz
+#define SPEED_ZERO_TIMEOUT    100
+#define SPEED_ZERO_PERIOD		  500	// 2hz
+#define REFRESH_RATE          5   // 200hz
+#define ERROR_MSG_PERIOD      100 // 10hz
+#define RINEHART_ROUTE_PERIOD 50  // 20hz
 
 #define ADC_READ_STACK       128
 #define DAQ_TASK_STACK       128
@@ -160,6 +161,9 @@ enum rinehart_ids
   FIRMWARE_INFO = 0x0AE,
 } rinehart_ids;
 
+
+#define RINEHART_MSGS 15
+
 #define NUM_TASKS 9
 
 void send_heartbeat(uint8_t module);
@@ -169,6 +173,10 @@ void start_daq2();
 void init_max_arrays();
 
 void task_heartbeat();
+
+void task_route_rinehart_msgs();
+void add_to_buf(CanRxMsgTypeDef * rx, CanRxMsgTypeDef * buf);
+
 
 void read_adc_task();
 void process_sensor_enable(uint8_t * data);
@@ -186,6 +194,6 @@ void send_push_rod_data();
 void send_tire_temp_data();
 void set_sensor_capture(uint8_t enable, TaskHandle_t function, uint8_t mask);
 void error_task();
-void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len);
+void route_to_dcan(CanRxMsgTypeDef * rx);
 
 #endif /* DAQ2_H_ */

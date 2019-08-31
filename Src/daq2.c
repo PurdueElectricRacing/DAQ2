@@ -21,6 +21,8 @@ sensor_t g_max11616_sensors[MAX11616_CHANNELS];
 
 TaskHandle_t g_tasks[NUM_TASKS];
 
+CanRxMsgTypeDef rnhrt_buf[RINEHART_MSGS];
+
 /**
  * @brief initialize the peripherals of the DAQ2 system
  *
@@ -155,7 +157,9 @@ void start_daq2()
 	if (!g_max11614.broke && !g_max11616.broke)
 	{
     xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
+#ifdef SHOCK_POTS
 		xTaskCreate(send_shock_data, "SHOCK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[shock_task]);
+#endif
 #ifdef STRAIN_GAUGES
 		xTaskCreate(send_uca_data, "UCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[uca_task]);
 		xTaskCreate(send_lca_data, "LCA DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[lca_task]);
@@ -179,6 +183,10 @@ void start_daq2()
 	{
 		xTaskCreate(error_task, "ERROR TASK", DAQ_TASK_STACK, NULL, 1, NULL);
 	}
+
+	// create a task for flushing the buffer of rinehart messages to dcan
+	xTaskCreate(task_route_rinehart_msgs, "ROUTE RINEHART TASK", DAQ_TASK_STACK, NULL, 1, NULL);
+
 #elif !defined(REAR_DAQ) && defined(STRAIN_GAUGES)
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[drop_link_task]);
 #endif
@@ -197,6 +205,9 @@ void start_daq2()
  * @brief blinks an LED
  *
  * @return none
+ *
+ *
+ *
  * */
 //#define DEBUG
 void task_heartbeat()
@@ -230,6 +241,50 @@ void task_heartbeat()
 		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
 		vTaskDelayUntil(&last_wake, HEARTBEAT_PERIOD);
 	}
+}
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief flush rinehart data messages buffer to dcan
+ *
+ * @return none
+ * */
+void task_route_rinehart_msgs()
+{
+	TickType_t last_wake;
+	uint8_t i = 0;
+	CanRxMsgTypeDef *temp;
+
+	while (PER == GREAT)
+	{
+		last_wake = xTaskGetTickCount();
+		// add all messages in buffer to tx queue
+		for (i = 0; i < RINEHART_MSGS; i++)
+		{
+			temp = &(rnhrt_buf[i]);
+
+			route_to_dcan(temp);
+		}
+
+		vTaskDelayUntil(&last_wake, RINEHART_ROUTE_PERIOD);
+	}
+}
+
+
+/**
+ * Programmer: fallon2@purdue.edu - Chris Fallon
+ *
+ * @brief add a given rinehart message to the buffer
+ *
+ * @return none
+ * */
+void add_to_buf(CanRxMsgTypeDef * rx, CanRxMsgTypeDef * buf)
+{
+	uint8_t index = rx->StdId & 0x00F;   // use last nybble as array index
+	CanRxMsgTypeDef * temp = &(rnhrt_buf[index]);
+
+	memcpy(temp, rx, sizeof(CanRxMsgTypeDef)); // copy all data into the buffer
 }
 
 /**
@@ -573,6 +628,7 @@ void read_adc_task()
 		{
 			g_max11616_sensors[i].read(g_max11616_sensors[i].max);
 		}
+
 		for (i = 0; i < MAX11614_CHANNELS && !g_max11614_sensors[0].max->broke; i++)
 		{
 			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
@@ -596,25 +652,31 @@ void send_wheel_speed_task()
 	CanTxMsgTypeDef tx;
 	while (PER == GREAT)
 	{
+
 		last_wake = xTaskGetTickCount();
 		if (!g_left_wheel.error && !g_right_wheel.error)
 		{
 			tx.StdId = ID_WHEEL_SPEED;
-			// TODO fix wheel speed lengths
-			tx.Data[0] = (g_left_wheel.speed >> 24) & 0xFF;
-			tx.Data[1] = (g_left_wheel.speed >> 16) & 0xFF;
-			tx.Data[2] = (g_left_wheel.speed >> 8) & 0xFF;
-			tx.Data[3] = (g_left_wheel.speed) & 0xFF;
-			tx.Data[4] = (g_right_wheel.speed >> 24) & 0xFF;;
-			tx.Data[5] = (g_right_wheel.speed >> 16) & 0xFF;;
-			tx.Data[6] = (g_right_wheel.speed >> 8) & 0xFF;;
-			tx.Data[7] = (g_right_wheel.speed) & 0xFF;;
+			tx.Data[0] = (uint8_t) (g_left_wheel.speed >> 24);
+			tx.Data[1] = (uint8_t) (g_left_wheel.speed >> 16);
+			tx.Data[2] = (uint8_t) (g_left_wheel.speed >> 8);
+			tx.Data[3] = (uint8_t) (g_left_wheel.speed);
+			tx.Data[4] = (uint8_t) (g_right_wheel.speed >> 24);
+			tx.Data[5] = (uint8_t) (g_right_wheel.speed >> 16);
+			tx.Data[6] = (uint8_t) (g_right_wheel.speed >> 8);
+			tx.Data[7] = (uint8_t) (g_right_wheel.speed);
 			tx.DLC = 8;
 			tx.IDE = CAN_ID_STD;
 			tx.RTR = CAN_RTR_DATA;
 
-			xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
-			xQueueSendToBack(daq.q_tx_vcan, &tx, 100);
+			if (xQueueSendToBack(daq.q_tx_dcan, &tx, 100) != pdTRUE)
+			{
+				break;
+			}
+			if (xQueueSendToBack(daq.q_tx_vcan, &tx, 100) != pdTRUE)
+			{
+				break;
+			}
 
 			vTaskDelayUntil(&last_wake, WHEEL_SPD_SEND_PERIOD);
 		}
@@ -628,7 +690,7 @@ void send_wheel_speed_task()
  *
  * @brief RTOS task to poll wheel speed and reset it to 0 if no pulses in a certain time frame
  * *
- * @return none*/
+ * @return void*/
 void wheel_speed_zero_task()
 {
 	TickType_t last_wake;
@@ -659,17 +721,15 @@ void wheel_speed_zero_task()
  *
  * @return none
  * */
-void route_to_dcan(uint8_t * data, uint16_t id, uint8_t d_len)
+void route_to_dcan(CanRxMsgTypeDef * rx)
 {
 	CanTxMsgTypeDef tx;
-	tx.StdId = id;
-	tx.DLC = d_len;
+	tx.StdId = rx->StdId;
+	tx.DLC = rx->DLC;
 	tx.IDE = CAN_ID_STD;
 	tx.RTR = CAN_RTR_DATA;
-	for (uint8_t i = 0; i < d_len; i++)
-	{
-		tx.Data[i] = data[i];
- 	}
+	memcpy(tx.Data, rx->Data, rx->DLC * sizeof(uint8_t));
+
 	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 	HAL_GPIO_WritePin(GPIOD, LD4_Pin, 0);
 }

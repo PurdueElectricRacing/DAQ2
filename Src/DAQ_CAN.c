@@ -6,8 +6,10 @@
  */
 
 #include "DAQ_CAN.h"
+#include "daq2.h"
 
 extern volatile DAQ_t daq;
+extern CanRxMsgTypeDef * rnhrt_buf;
 
 /***************************************************************************
 *
@@ -118,6 +120,7 @@ void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 	  HAL_CAN_ConfigFilter(hcan, &FilterConf);
 }
 
+
 /***************************************************************************
 *
 *     Function Information
@@ -140,9 +143,12 @@ void VCANFilterConfig(CAN_HandleTypeDef * hcan)
 void taskTX_DCAN()
 {
 	CanTxMsgTypeDef tx;
+	TickType_t last_wake;
 
 	for (;;)
 	{
+		last_wake = xTaskGetTickCount();
+
 		//check if this task is triggered
 		if (xQueuePeek(daq.q_tx_dcan, &tx, portMAX_DELAY) == pdTRUE)
 		{
@@ -154,10 +160,13 @@ void taskTX_DCAN()
 			header.StdId = tx.StdId;
 			header.TransmitGlobalTime = ENABLE;
 			uint32_t mailbox;
+
 			while (!HAL_CAN_GetTxMailboxesFreeLevel(daq.dcan)); // while mailboxes not free
+
 			HAL_CAN_AddTxMessage(daq.dcan, &header, tx.Data, &mailbox);
 			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
-			vTaskDelay(10);
+
+			vTaskDelayUntil(&last_wake, REFRESH_RATE);
 		}
 	}
 }
@@ -184,9 +193,11 @@ void taskTX_DCAN()
 void taskTX_VCAN()
 {
 	CanTxMsgTypeDef tx;
-
+	TickType_t last_wake;
 	for (;;)
 	{
+		last_wake = xTaskGetTickCount();
+
 		//check if this task is triggered
 		if (xQueuePeek(daq.q_tx_vcan, &tx, portMAX_DELAY) == pdTRUE)
 		{
@@ -199,54 +210,15 @@ void taskTX_VCAN()
 			header.TransmitGlobalTime = ENABLE;
 			uint32_t mailbox;
 			while (!HAL_CAN_GetTxMailboxesFreeLevel(daq.vcan)); // while mailboxes not free
+
 			HAL_CAN_AddTxMessage(daq.vcan, &header, tx.Data, &mailbox);
 			HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+
+			vTaskDelayUntil(&last_wake, REFRESH_RATE);
 		}
 	}
 }
 
-/***************************************************************************
-*
-*     Function Information
-*
-*     Name of Function: taskRXCANprocess
-*
-*     Programmer's Name: Ben Ng, xbenng@gmail.com
-*
-*     Function Return Type: none
-*
-*     Parameters (list data type, name, and comment one per line):
-*
-*      Global Dependents:
-*	   1.-
-*
-*     Function Description:
-*     	Task function to process received CAN Messages.
-*     	CanRxMsgTypeDef are sent here to the q_rxcan queue to be processed
-*     	from the CAN RX interrupt handler.
-*     	The data is process and handled according to what kind of message is received
-*
-***************************************************************************/
-void taskRX_DCANProcess()
-{
-	CanRxMsgTypeDef rx;  //CanRxMsgTypeDef to be received on the queue
-	while (PER == GREAT)
-	{
-		//if there is a CanRxMsgTypeDef in the queue, pop it, and store in rx
-		if (xQueueReceive(daq.q_rx_dcan, &rx, (TickType_t) 5) == pdTRUE)
-		{
-			//A CAN message has been received
-			//check what kind of message we received
-			switch (rx.StdId)
-			{
-				case ID_DASHBOARD:
-				{
-					break;
-				}
-			}
-		}
-	}
-}
 
 // TODO move to one rx process
 void taskRX_VCANProcess()
@@ -270,18 +242,22 @@ void taskRX_VCANProcess()
 			{
 				process_sensor_enable(rx.Data);
 			}
+
 #ifdef REAR_DAQ
-			else if (rx.StdId == ID_DASHBOARD ||
-					(rx.StdId >= TEMP1 && rx.StdId <= FIRMWARE_INFO))
+			else if (rx.StdId == ID_DASHBOARD)
 			{
-				route_to_dcan(rx.Data, ID_DASHBOARD, DASHBOARD_LENGTH);
-				break;
+				route_to_dcan(&rx);
+			}
+			else if (rx.StdId >= TEMP1 && rx.StdId <= FIRMWARE_INFO)
+			{
+				// if the message is from the rinehart, add it to a buffer which gets flushed every 50ms
+				add_to_buf(&rx, rnhrt_buf);
 			}
 #endif
 
 		}
 //		HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-		vTaskDelayUntil(&last_tick, 50);
+		vTaskDelayUntil(&last_tick, 10);
 		}
 }
 

@@ -56,11 +56,11 @@ void init_hall_sensor(volatile hall_sensor *sensor, TIM_HandleTypeDef *htim, uin
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 
-	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
 	{
 		calculate_and_store_speed(&g_left_wheel, LEFT_WHEEL_CHANNEL);
 	}
-	else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
+	else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
 	{
 		calculate_and_store_speed(&g_right_wheel, RIGHT_WHEEL_CHANNEL);
 	}
@@ -88,19 +88,23 @@ void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
 	}
 
 	uint32_t dt = 0;
+
 	//get the current timer value for the sensor
 	sensor->time_n_minus_1 = sensor->time_n;
-	sensor->time_n = __HAL_TIM_GET_COMPARE(sensor->htim, channel);		//current time gets stored in the sensor's respective channel
+	sensor->time_n = __HAL_TIM_GetCompare(sensor->htim, channel);		//current time gets stored in the sensor's respective channel
 	dt = sensor->time_n - sensor->time_n_minus_1;
+	if (dt > 0)
+	{
+		if (channel == RIGHT_WHEEL_CHANNEL || channel == LEFT_WHEEL_CHANNEL)
+		{
+			sensor->speed = calculate_wheel_speed(dt);
+		}
+		else if (channel == C_FLOW_CHANNEL)
+		{
+			sensor->speed = calculate_flow_rate(dt);
+		}
+	}
 
-	if (channel == RIGHT_WHEEL_CHANNEL || channel == LEFT_WHEEL_CHANNEL)
-	{
-		sensor->speed = calculate_wheel_speed(dt);
-	}
-	else if (channel == C_FLOW_CHANNEL)
-	{
-		sensor->speed = calculate_flow_rate(dt);
-	}
 }
 
 /**

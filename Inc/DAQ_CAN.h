@@ -8,7 +8,10 @@
 #ifndef DAQ_CAN_H_
 #define DAQ_CAN_H_
 
-#include "daq2.h"
+#include "main.h"
+#include "stm32f4xx_hal.h"
+#include "cmsis_os.h"
+
 #define ID_PEDALBOX1						0x500
 #define ID_PEDALBOX2						0x501
 
@@ -52,8 +55,8 @@
 
 #define QUEUE_SIZE_RXCAN_1			16
 #define QUEUE_SIZE_RXCAN_2			16
-#define QUEUE_SIZE_TXCAN_1			10
-#define QUEUE_SIZE_TXCAN_2			10
+#define QUEUE_SIZE_TXCAN_1			20
+#define QUEUE_SIZE_TXCAN_2			20
 
 
 
@@ -116,6 +119,9 @@ typedef struct
 void ISR_RXCAN();
 void DCANFilterConfig();
 void VCANFilterConfig();
+
+void CAN_Filter_Config(CAN_HandleTypeDef * hcan, uint32_t filter_id, uint32_t filter_mask);
+
 void taskRX_DCANProcess();
 void taskRX_VCANProcess();
 void taskTX_DCAN();

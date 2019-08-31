@@ -48,7 +48,7 @@ void max1161x_Init(max1161x* mux, I2C_HandleTypeDef* wireIface, uint16_t address
 	mux->wireIface = wireIface;
 	mux->devAddress = address;
 
-	if (HAL_I2C_IsDeviceReady(wireIface, 0x66, 2, 100) != HAL_OK)
+	if (HAL_I2C_IsDeviceReady(wireIface, mux->devAddress, 2, 100) != HAL_OK)
 	{
 		mux->broke++;
 	}
@@ -134,7 +134,7 @@ uint8_t max1161x_Scan(max1161x* mux, uint16_t* buffer){
 	ret += max1161x_Configuration(mux, configurationByte);
 	// 2 bytes per channel. There are 8 channels
 	for(uint8_t i = 0; i < channels; i++){
-		ret += max1161x_ADC_Read(mux, i, buffer[i]);
+		ret += max1161x_ADC_Read(mux, i, &buffer[i]);
 	}
 	return ret;
 }
