@@ -100,6 +100,10 @@ void Error_Handler(void);
 #define PH1_OSC_OUT_GPIO_Port GPIOH
 #define OTG_FS_PowerSwitchOn_Pin GPIO_PIN_0
 #define OTG_FS_PowerSwitchOn_GPIO_Port GPIOC
+#define L_SHOCK_POT_Pin GPIO_PIN_1
+#define L_SHOCK_POT_GPIO_Port GPIOC
+#define R_SHOCK_POT_Pin GPIO_PIN_2
+#define R_SHOCK_POT_GPIO_Port GPIOC
 #define PDM_OUT_Pin GPIO_PIN_3
 #define PDM_OUT_GPIO_Port GPIOC
 #define B1_Pin GPIO_PIN_0

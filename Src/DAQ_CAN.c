@@ -249,7 +249,6 @@ void taskRX_VCANProcess()
 				// if the message is from the rinehart, add it to a buffer which gets flushed every 50ms
 				add_to_buf(&rx, rnhrt_buf);
 			}
-//			if (rx.StdId == ID_DASHBOARD || rx.StdId == ID_F_WHEEL_SPEED)
 			else
 			{
 				route_to_dcan(&rx);

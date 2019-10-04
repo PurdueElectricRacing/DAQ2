@@ -18,7 +18,8 @@
 #define GREAT 1
 #define PER GREAT
 
-#define REAR_DAQ		// undefine this if this is the front DAQ board
+//#define REAR_DAQ		// undefine this if this is the front DAQ board
+#define SHOCK_POTS
 //#define STRAIN_GAUGES
 
 #ifdef REAR_DAQ
