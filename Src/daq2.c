@@ -206,6 +206,8 @@ void start_daq2()
 		xTaskCreate(error_task, "ERROR TASK", DAQ_TASK_STACK, NULL, 1, NULL);
 	}
 
+  HAL_ADC_Start_DMA(&hadc1,(uint32_t *) hacked_adc_values, 5);
+
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
 }
 
@@ -415,7 +417,7 @@ void send_shock_data()
 		tx.RTR = CAN_RTR_DATA;
 		tx.DLC = 4;
 		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
-		vTaskDelayUntil(&last_wake, 10);
+		vTaskDelayUntil(&last_wake, 20);
 	}
 	vTaskDelete(NULL);
 }
@@ -631,23 +633,19 @@ void read_adc_task()
 	while (PER == GREAT)
 	{
 		last_wake = xTaskGetTickCount();
-	  HAL_ADC_Start_DMA(&hadc1, hacked_adc_values, 5);
 
+#ifdef REAR_DAQ
 		// read every channel on all the MAX chips
 		// each object in the array has a function pointer depending on the sensor
-#ifdef REAR_DAQ
 		for (uint8_t i = 0; i < 3; i++)
 		{
 			inline_temp_read_ADC(&g_max11616_sensors[MOTOR_C_TEMP + i], i, hacked_adc_values);
 		}
+#else
+		g_max11616_sensors[LEFT_SHOCK_POT].value  = hacked_adc_values[1];
+		g_max11616_sensors[RIGHT_SHOCK_POT].value = hacked_adc_values[2];
 #endif
 
-
-		g_max11616_sensors[LEFT_SHOCK_POT].value  = hacked_adc_values[3];
-		g_max11616_sensors[RIGHT_SHOCK_POT].value = hacked_adc_values[4];
-
-
-	  HAL_ADC_Stop_DMA(&hadc1);
 
 
 //		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
@@ -659,7 +657,7 @@ void read_adc_task()
 //		{
 //			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
 //		}
-		vTaskDelayUntil(&last_wake, MUX_READ_PERIOD);
+		vTaskDelayUntil(&last_wake, 1000);
 //		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 	}
 }
