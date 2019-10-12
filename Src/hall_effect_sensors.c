@@ -117,8 +117,8 @@ void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
 uint32_t calculate_wheel_speed(uint32_t dt)
 {
 	//if the time delta > 0, then we calculate speed, otherwise we divide by 0
-	 float speed = ((TOOTH_COUNT * MILLIS_TO_MINUTES * ( TOOTH_ANGLE / dt) ) / FULL_CIRCLE);
-	 return (uint32_t) (speed * SCALAR);
+	 float speed = ((MILLIS_TO_MINUTES * ( TOOTH_ANGLE / dt) ) / FULL_CIRCLE);
+	 return (uint32_t) speed;
 }
 
 /**
@@ -133,5 +133,5 @@ uint32_t calculate_flow_rate(uint32_t dt)
 	// ((pulses per millis) * 1000) = HZ
 	// HZ / 7.5 = L/MIN
 	float speed = (((1.0f / dt) * 1000.0f) / LPM_CONVERSION );
-	return (uint32_t) (speed * SCALAR);
+	return (uint32_t) speed;
 }
