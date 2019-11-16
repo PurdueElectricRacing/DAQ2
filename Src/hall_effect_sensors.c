@@ -133,6 +133,5 @@ uint32_t calculate_flow_rate(uint32_t dt)
 	// ((pulses per millis) * 1000) = HZ
 	// HZ / 7.5 = L/MIN
 	float speed = (((1.0f / dt) * 1000.0f) / LPM_CONVERSION );
-	return (uint32_t) (speed
-			);
+	return (uint32_t) (speed);
 }
