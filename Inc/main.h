@@ -90,6 +90,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define CS_I2C_SPI_Pin GPIO_PIN_3
 #define CS_I2C_SPI_GPIO_Port GPIOE
+#define Right_wheel_Error_Pin GPIO_PIN_5
+#define Right_wheel_Error_GPIO_Port GPIOE
 #define PC14_OSC32_IN_Pin GPIO_PIN_14
 #define PC14_OSC32_IN_GPIO_Port GPIOC
 #define PC15_OSC32_OUT_Pin GPIO_PIN_15
@@ -100,20 +102,20 @@ void Error_Handler(void);
 #define PH1_OSC_OUT_GPIO_Port GPIOH
 #define OTG_FS_PowerSwitchOn_Pin GPIO_PIN_0
 #define OTG_FS_PowerSwitchOn_GPIO_Port GPIOC
-#define L_SHOCK_POT_Pin GPIO_PIN_1
-#define L_SHOCK_POT_GPIO_Port GPIOC
+#define BRAKE_2_Pin GPIO_PIN_1
+#define BRAKE_2_GPIO_Port GPIOC
 #define R_SHOCK_POT_Pin GPIO_PIN_2
 #define R_SHOCK_POT_GPIO_Port GPIOC
 #define PDM_OUT_Pin GPIO_PIN_3
 #define PDM_OUT_GPIO_Port GPIOC
 #define B1_Pin GPIO_PIN_0
 #define B1_GPIO_Port GPIOA
-#define Right_wheel_Pin GPIO_PIN_1
-#define Right_wheel_GPIO_Port GPIOA
-#define Left_wheel_Pin GPIO_PIN_2
-#define Left_wheel_GPIO_Port GPIOA
-#define MOTOR_COOL_TEMP_Pin GPIO_PIN_3
-#define MOTOR_COOL_TEMP_GPIO_Port GPIOA
+#define Right_wheel_Z_Pin GPIO_PIN_1
+#define Right_wheel_Z_GPIO_Port GPIOA
+#define Right_wheel_B_Pin GPIO_PIN_2
+#define Right_wheel_B_GPIO_Port GPIOA
+#define THROTTLE_1_Pin GPIO_PIN_3
+#define THROTTLE_1_GPIO_Port GPIOA
 #define I2S3_WS_Pin GPIO_PIN_4
 #define I2S3_WS_GPIO_Port GPIOA
 #define SPI1_SCK_Pin GPIO_PIN_5
@@ -122,18 +124,22 @@ void Error_Handler(void);
 #define SPI1_MISO_GPIO_Port GPIOA
 #define SPI1_MOSI_Pin GPIO_PIN_7
 #define SPI1_MOSI_GPIO_Port GPIOA
-#define RAD_COOL_TEMP_Pin GPIO_PIN_0
-#define RAD_COOL_TEMP_GPIO_Port GPIOB
-#define MC_COOL_TEMP_Pin GPIO_PIN_1
-#define MC_COOL_TEMP_GPIO_Port GPIOB
+#define THROTTLE_2_Pin GPIO_PIN_0
+#define THROTTLE_2_GPIO_Port GPIOB
+#define BRAKE_1_Pin GPIO_PIN_1
+#define BRAKE_1_GPIO_Port GPIOB
 #define BOOT1_Pin GPIO_PIN_2
 #define BOOT1_GPIO_Port GPIOB
 #define CLK_IN_Pin GPIO_PIN_10
 #define CLK_IN_GPIO_Port GPIOB
+#define COOL_SPEED_Pin GPIO_PIN_11
+#define COOL_SPEED_GPIO_Port GPIOB
 #define DCAN_RX_Pin GPIO_PIN_12
 #define DCAN_RX_GPIO_Port GPIOB
 #define DCAN_TX_Pin GPIO_PIN_13
 #define DCAN_TX_GPIO_Port GPIOB
+#define Left_wheel_Error_Pin GPIO_PIN_14
+#define Left_wheel_Error_GPIO_Port GPIOB
 #define LD4_Pin GPIO_PIN_12
 #define LD4_GPIO_Port GPIOD
 #define LD3_Pin GPIO_PIN_13
@@ -142,8 +148,12 @@ void Error_Handler(void);
 #define LD5_GPIO_Port GPIOD
 #define LD6_Pin GPIO_PIN_15
 #define LD6_GPIO_Port GPIOD
+#define Left_wheel_B_Pin GPIO_PIN_6
+#define Left_wheel_B_GPIO_Port GPIOC
 #define I2S3_MCK_Pin GPIO_PIN_7
 #define I2S3_MCK_GPIO_Port GPIOC
+#define Left_wheel_A_Pin GPIO_PIN_8
+#define Left_wheel_A_GPIO_Port GPIOC
 #define VBUS_FS_Pin GPIO_PIN_9
 #define VBUS_FS_GPIO_Port GPIOA
 #define OTG_FS_ID_Pin GPIO_PIN_10
@@ -156,8 +166,8 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define Coolant_flow_Pin GPIO_PIN_15
-#define Coolant_flow_GPIO_Port GPIOA
+#define Right_wheel_A_Pin GPIO_PIN_15
+#define Right_wheel_A_GPIO_Port GPIOA
 #define I2S3_SCK_Pin GPIO_PIN_10
 #define I2S3_SCK_GPIO_Port GPIOC
 #define I2S3_SD_Pin GPIO_PIN_12
@@ -172,12 +182,12 @@ void Error_Handler(void);
 #define OTG_FS_OverCurrent_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+#define Left_wheel_Z_Pin GPIO_PIN_5
+#define Left_wheel_Z_GPIO_Port GPIOB
 #define I2C1_SCL_Pin GPIO_PIN_6
 #define I2C1_SCL_GPIO_Port GPIOB
 #define I2C1_SDA_Pin GPIO_PIN_9
 #define I2C1_SDA_GPIO_Port GPIOB
-#define MEMS_INT2_Pin GPIO_PIN_1
-#define MEMS_INT2_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

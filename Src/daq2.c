@@ -10,8 +10,8 @@
 #include "math.h"
 
 
-extern volatile hall_sensor g_right_wheel;
-extern volatile hall_sensor g_left_wheel;
+extern volatile encoder_t g_right_wheel;
+extern volatile encoder_t g_left_wheel;
 extern volatile hall_sensor g_c_flow;
 extern volatile DAQ_t daq;
 extern uint32_t uwTick;
@@ -50,8 +50,8 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 	// sets all the enable for the CAN messages
   daq.can_enable = ENABLE_CAN_TX;
 
-	init_hall_sensor(&g_left_wheel, htim, LEFT_WHEEL_CHANNEL);
-	init_hall_sensor(&g_right_wheel, htim, RIGHT_WHEEL_CHANNEL);
+	init_encoder(&g_left_wheel, htim, TIM_CHANNEL_3);
+	init_encoder(&g_right_wheel, htim, TIM_CHANNEL_3);
 
 	// init the max chips
 	max1161x_Init(&g_max11614, hi2c, MAX11614_ADDR, 7);
@@ -161,12 +161,12 @@ void start_daq2()
 {
 	xTaskCreate(task_heartbeat, "HEARTBEAT", 128, NULL, 1, NULL);
 	xTaskCreate(taskTX_DCAN, "TX CAN DCAN", 256, NULL, 1, NULL);
-	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", 256, NULL, 1, NULL);
-	xTaskCreate(taskRX_VCANProcess, "RX VCAN", 256, NULL, 1, NULL);
+//	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", 256, NULL, 1, NULL);
+//	xTaskCreate(taskRX_VCANProcess, "RX VCAN", 256, NULL, 1, NULL);
 
 //	if (!g_max11614.broke && !g_max11616.broke)
 	{
-    xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
+//    xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
 #ifdef SHOCK_POTS
 		xTaskCreate(send_shock_data, "SHOCK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[shock_task]);
 #endif
@@ -195,7 +195,7 @@ void start_daq2()
 	}
 
 	// create a task for flushing the buffer of rinehart messages to dcan
-	xTaskCreate(task_route_rinehart_msgs, "ROUTE RINEHART TASK", DAQ_TASK_STACK, NULL, 1, NULL);
+//	xTaskCreate(task_route_rinehart_msgs, "ROUTE RINEHART TASK", DAQ_TASK_STACK, NULL, 1, NULL);
 
 #elif !defined(REAR_DAQ) && defined(STRAIN_GAUGES)
 	xTaskCreate(send_drop_link_data, "DROP LINK DATA TASK", DAQ_TASK_STACK, NULL, 1, &g_tasks[drop_link_task]);
@@ -603,6 +603,8 @@ void send_coolant_data_task()
 		temp.IDE = CAN_ID_STD;
 		temp.RTR = CAN_RTR_DATA;
 		temp.DLC = 6;
+    
+    g_c_flow.speed = calculate_flow_rate(g_c_flow.time_n - g_c_flow.time_n_minus_1);
 
 		spd. StdId = ID_R_COOLANT_SPD;
 		spd.IDE = CAN_ID_STD;
@@ -672,12 +674,15 @@ void read_adc_task()
 void send_wheel_speed_task()
 {
 	TickType_t last_wake = xTaskGetTickCount();
-
 	CanTxMsgTypeDef tx;
+
 	while (PER == GREAT)
 	{
-
 		last_wake = xTaskGetTickCount();
+
+    g_left_wheel.speed = calculate_wheel_speed(g_left_wheel.a_time - g_left_wheel.a_time_minus_1);
+    g_right_wheel.speed = calculate_wheel_speed(g_right_wheel.a_time - g_right_wheel.a_time_minus_1);
+
 		if (!g_left_wheel.error && !g_right_wheel.error)
 		{
 			tx.StdId = ID_WHEEL_SPEED;
@@ -697,10 +702,10 @@ void send_wheel_speed_task()
 			{
 				break;
 			}
-			if (xQueueSendToBack(daq.q_tx_vcan, &tx, 100) != pdTRUE)
-			{
-				break;
-			}
+//			if (xQueueSendToBack(daq.q_tx_vcan, &tx, 100) != pdTRUE)
+//			{
+//				break;
+//			}
 
 			vTaskDelayUntil(&last_wake, WHEEL_SPD_SEND_PERIOD);
 		}
@@ -721,11 +726,11 @@ void wheel_speed_zero_task()
 	while (PER == GREAT)
 	{
 		last_wake = xTaskGetTickCount();
-		if (uwTick - g_right_wheel.time_n > SPEED_ZERO_TIMEOUT)
+		if (uwTick - g_right_wheel.a_time > SPEED_ZERO_TIMEOUT)
 		{
 			g_right_wheel.speed = 0;
 		}
-		if (uwTick - g_left_wheel.time_n > SPEED_ZERO_TIMEOUT)
+		if (uwTick - g_left_wheel.a_time > SPEED_ZERO_TIMEOUT)
 		{
 			g_left_wheel.speed = 0;
 		}

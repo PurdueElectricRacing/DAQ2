@@ -11,10 +11,10 @@
 *
 *
 ***************************************************************************/
-#include "hall_effect_sensors.h"
+#include "speed_sensors.h"
 
-extern volatile hall_sensor g_right_wheel;
-extern volatile hall_sensor g_left_wheel;
+extern volatile encoder_t g_right_wheel;
+extern volatile encoder_t g_left_wheel;
 #ifdef REAR_DAQ
   extern volatile hall_sensor g_c_flow;
 #endif
@@ -38,12 +38,38 @@ void init_hall_sensor(volatile hall_sensor *sensor, TIM_HandleTypeDef *htim, uin
 	sensor->time_n_minus_1 = 0;
 	sensor->speed = 0;
 	sensor->error = 0;
+  sensor->channel = channel;
 
 	if (HAL_TIM_IC_Start_IT(htim, channel) != HAL_OK)
 	{
 		sensor->error = 1;
 	}
 }
+
+/**
+ *	@brief: Initializes the provided hall_sensor struct with the provided TIM_HandleTypeDef pointer
+ *				and initializes all values to 0. Starts the Input Capture for the provided TIM_HandleTypeDef *
+ *				in interrupt mode on channel 2 of the timer.
+ *
+ *		@param enc:  pointer to the encoder object
+ *		@param htim:    pointer to HAL timer object
+ *
+ *		@retvalue: none
+ *	  **/
+void init_encoder(encoder_t * enc, TIM_HandleTypeDef *htim, uint32_t channel)
+{
+  enc->htim = htim;
+  enc->a_time = 0;
+  enc->a_time_minus_1 = 0;
+  enc->channel = channel;
+  enc->speed = 0;
+
+	if (HAL_TIM_IC_Start_IT(htim, TIM_CHANNEL_3) != HAL_OK)
+	{
+		enc->error = 3;
+	}
+}
+
 
 /**
  * 	-- Input Compare capture callback handler
@@ -55,56 +81,71 @@ void init_hall_sensor(volatile hall_sensor *sensor, TIM_HandleTypeDef *htim, uin
  **/
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-
-	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-	{
-		calculate_and_store_speed(&g_left_wheel, LEFT_WHEEL_CHANNEL);
-	}
-	else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-	{
-		calculate_and_store_speed(&g_right_wheel, RIGHT_WHEEL_CHANNEL);
-	}
-#ifdef REAR_DAQ
-	else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-	{
-		calculate_and_store_speed(&g_c_flow, C_FLOW_CHANNEL);
-	}
-#endif
+  if (htim->Instance == TIM2)
+  {
+    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)    // right wheel pulse A
+    {
+      // store times for right wheel
+      store_enc_times((encoder_t *) &g_right_wheel);
+    }
+    #ifdef REAR_DAQ
+    else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) // coolant speed sensor
+    {
+      // store times for coolant speed
+      store_hall_times(&g_c_flow);
+    }
+    #endif
+  }
+  else if (htim->Instance == TIM3)
+  {
+    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) // Left wheel pulse A
+    {
+      // store times for left wheel
+      store_enc_times((encoder_t *) &g_left_wheel);
+    }
+  }
 }
 
+
+
 /**
- * @brief: calculates and stores the speed of the sensor pointed to by *sensor
+ * @brief: stores the timestamp of the sensor pointed to by *sensor
  *
  * @param: hall_sensor *sensor: pointer to the hall effect sensor
  *
  * @return: none
  * */
 
-void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
+void store_hall_times(volatile hall_sensor *sensor)
 {
 	if (sensor->error)
 	{
 		return;
 	}
 
-	uint32_t dt = 0;
-
 	//get the current timer value for the sensor
 	sensor->time_n_minus_1 = sensor->time_n;
-	sensor->time_n = __HAL_TIM_GetCompare(sensor->htim, channel);		//current time gets stored in the sensor's respective channel
-	dt = sensor->time_n - sensor->time_n_minus_1;
-	if (dt > 0)
+	sensor->time_n = __HAL_TIM_GetCompare(sensor->htim, sensor->channel);		//current time gets stored in the sensor's respective channel
+}
+
+/**
+ * @brief: stores the timestamps of the sensor pointed to by *sensor
+ *
+ * @param: encoder_t *sensor: pointer to the encoder sensor
+ *
+ * @return: none
+ * */
+
+void store_enc_times(encoder_t *sensor)
+{
+	if (sensor->error)
 	{
-		if (channel == RIGHT_WHEEL_CHANNEL || channel == LEFT_WHEEL_CHANNEL)
-		{
-			sensor->speed = calculate_wheel_speed(dt);
-		}
-		else if (channel == C_FLOW_CHANNEL)
-		{
-			sensor->speed = calculate_flow_rate(dt);
-		}
+		return;
 	}
 
+	//get the current timer value for the sensor
+	sensor->a_time_minus_1 = sensor->a_time;
+	sensor->a_time = __HAL_TIM_GetCompare(sensor->htim, sensor->channel);		//current time gets stored in the sensor's respective channel
 }
 
 /**
@@ -117,7 +158,7 @@ void calculate_and_store_speed(volatile hall_sensor *sensor, uint32_t channel)
 uint32_t calculate_wheel_speed(uint32_t dt)
 {
 	//if the time delta > 0, then we calculate speed, otherwise we divide by 0
-	 float speed = ((MILLIS_TO_MINUTES * ( TOOTH_ANGLE / dt) ) / FULL_CIRCLE);
+	 float speed = ((MILLIS_TO_MINUTES * (DEGREES_PER_COUNT / dt) ) / FULL_CIRCLE);
 	 return (uint32_t) (speed);
 }
 

@@ -11,15 +11,15 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
-#include "hall_effect_sensors.h"
+#include "speed_sensors.h"
 #include "DAQ_CAN.h"
 #include "maxsensor.h"
 
 #define GREAT 1
 #define PER GREAT
 
-//#define REAR_DAQ		// undefine this if this is the front DAQ board
-#define SHOCK_POTS
+#define REAR_DAQ		// undefine this if this is the front DAQ board
+//#define SHOCK_POTS
 //#define STRAIN_GAUGES
 
 #ifdef REAR_DAQ
@@ -55,15 +55,15 @@
 // enable all by default
 #define ENABLE_CAN_TX 0xFF
 
-#define MUX_READ_PERIOD       10 	// 100hz
-#define HEARTBEAT_PERIOD      1000	// 1hz
-#define WHEEL_SPD_SEND_PERIOD 20  // 50hz
-#define COOLANT_DATA_PERIOD   10  // 100hz
-#define SPEED_ZERO_TIMEOUT    100
-#define SPEED_ZERO_PERIOD		  500	// 2hz
-#define REFRESH_RATE          5   // 200hz
-#define ERROR_MSG_PERIOD      100 // 10hz
-#define RINEHART_ROUTE_PERIOD 50  // 20hz
+#define MUX_READ_PERIOD       pdMS_TO_TICKS(10) 	// 100hz
+#define HEARTBEAT_PERIOD      pdMS_TO_TICKS(1000)	// 1hz
+#define WHEEL_SPD_SEND_PERIOD pdMS_TO_TICKS(1)  // 1000hz
+#define COOLANT_DATA_PERIOD   pdMS_TO_TICKS(10)  // 100hz
+#define SPEED_ZERO_TIMEOUT    pdMS_TO_TICKS(100)
+#define SPEED_ZERO_PERIOD		  pdMS_TO_TICKS(500)	// 2hz
+#define REFRESH_RATE          pdMS_TO_TICKS(5)   // 200hz
+#define ERROR_MSG_PERIOD      pdMS_TO_TICKS(100) // 10hz
+#define RINEHART_ROUTE_PERIOD pdMS_TO_TICKS(50)  // 20hz
 
 #define ADC_READ_STACK       128
 #define DAQ_TASK_STACK       128
@@ -187,6 +187,7 @@ void wheel_speed_zero_task();
 void set_wheel_speed_capture(uint8_t enable);
 
 void send_wheel_speed_task();
+void calc_speed_task();
 void send_coolant_data_task();
 void send_shock_data();
 void send_arb_torsional_data();
