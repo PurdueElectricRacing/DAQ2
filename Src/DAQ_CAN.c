@@ -244,15 +244,16 @@ void taskRX_VCANProcess()
 			}
 
 #ifdef REAR_DAQ
-			else if (rx.StdId == ID_DASHBOARD)
-			{
-				route_to_dcan(&rx);
-			}
 			else if (rx.StdId >= TEMP1 && rx.StdId <= FIRMWARE_INFO)
 			{
 				// if the message is from the rinehart, add it to a buffer which gets flushed every 50ms
 				add_to_buf(&rx, rnhrt_buf);
 			}
+			else
+			{
+				route_to_dcan(&rx);
+			}
+
 #endif
 
 		}

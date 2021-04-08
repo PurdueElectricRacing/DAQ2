@@ -18,7 +18,8 @@
 #define GREAT 1
 #define PER GREAT
 
-#define REAR_DAQ		// undefine this if this is the front DAQ board
+//#define REAR_DAQ		// undefine this if this is the front DAQ board
+#define SHOCK_POTS
 //#define STRAIN_GAUGES
 
 #ifdef REAR_DAQ
@@ -115,6 +116,8 @@
 #define EXTRACT_MSB(data) ((data >> 8) & 0xFF)
 #define EXTRACT_LSB(data) ((data) & 0xFF)
 
+#define ADC_VREF 5.0f
+
 typedef struct DAQ_t
 {
 	CAN_HandleTypeDef * vcan;
@@ -195,5 +198,7 @@ void send_tire_temp_data();
 void set_sensor_capture(uint8_t enable, TaskHandle_t function, uint8_t mask);
 void error_task();
 void route_to_dcan(CanRxMsgTypeDef * rx);
+
+void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp_values);
 
 #endif /* DAQ2_H_ */

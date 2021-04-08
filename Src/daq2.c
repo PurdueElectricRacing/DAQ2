@@ -7,6 +7,7 @@
 
 #include "daq2.h"
 #include <string.h>
+#include "math.h"
 
 
 extern volatile hall_sensor g_right_wheel;
@@ -14,10 +15,13 @@ extern volatile hall_sensor g_left_wheel;
 extern volatile hall_sensor g_c_flow;
 extern volatile DAQ_t daq;
 extern uint32_t uwTick;
+extern ADC_HandleTypeDef hadc1;
 max1161x g_max11614;
 max1161x g_max11616;
 sensor_t g_max11614_sensors[MAX11614_CHANNELS];
 sensor_t g_max11616_sensors[MAX11616_CHANNELS];
+
+uint32_t hacked_adc_values[5];   // raw ADC values
 
 TaskHandle_t g_tasks[NUM_TASKS];
 
@@ -40,6 +44,7 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 	// create queues for recieve and transmit
 	daq.q_rx_dcan = xQueueCreate(QUEUE_SIZE_RXCAN_1, sizeof(CanRxMsgTypeDef));
 	daq.q_tx_dcan = xQueueCreate(QUEUE_SIZE_TXCAN_1, sizeof(CanTxMsgTypeDef));
+
 	daq.q_rx_vcan = xQueueCreate(QUEUE_SIZE_RXCAN_2, sizeof(CanRxMsgTypeDef));
 	daq.q_tx_vcan = xQueueCreate(QUEUE_SIZE_TXCAN_2, sizeof(CanTxMsgTypeDef));
 	// sets all the enable for the CAN messages
@@ -60,6 +65,8 @@ void init_daq2(volatile DAQ_t * controller, I2C_HandleTypeDef * hi2c, I2C_Handle
 
 	DCANFilterConfig(dcan);
 	VCANFilterConfig(vcan);
+
+
 }
 
 /**
@@ -80,7 +87,7 @@ void init_max_arrays()
 	if (g_max11614.broke || g_max11616.broke)
 	{
 		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
-		return;
+//		return;
 	}
 
 	for (i = 0; i < MAX11614_CHANNELS; i++)
@@ -118,14 +125,17 @@ void init_max_arrays()
 	g_max11616_sensors[LCA_R_FRONT].read = maxsensor_Shockpot_Read;
 	g_max11616_sensors[LCA_R_BACK].pin = LCA_R_BACK;
 	g_max11616_sensors[LCA_R_BACK].read = maxsensor_Shockpot_Read;
+
 	g_max11616_sensors[MOTOR_C_TEMP].pin = MOTOR_C_TEMP;
 	g_max11616_sensors[MOTOR_C_TEMP].read = maxsensor_Inlineflow_Read;
+
 	g_max11616_sensors[RAD_C_TEMP].pin = RAD_C_TEMP;
 	g_max11616_sensors[RAD_C_TEMP].read = maxsensor_Inlineflow_Read;
+
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].pin = MOTOR_CONT_C_TEMP;
 	g_max11616_sensors[MOTOR_CONT_C_TEMP].read = maxsensor_Inlineflow_Read;
-	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
 
+	g_max11616_sensors[LEFT_SHOCK_POT].pin = LEFT_SHOCK_POT;
 	g_max11616_sensors[LEFT_SHOCK_POT].read = NULL;
 
 	g_max11616_sensors[ARB_DROPLINK_LEFT].pin = ARB_DROPLINK_LEFT;
@@ -154,7 +164,7 @@ void start_daq2()
 	xTaskCreate(taskTX_VCAN, "TX CAN VCAN", 256, NULL, 1, NULL);
 	xTaskCreate(taskRX_VCANProcess, "RX VCAN", 256, NULL, 1, NULL);
 
-	if (!g_max11614.broke && !g_max11616.broke)
+//	if (!g_max11614.broke && !g_max11616.broke)
 	{
     xTaskCreate(read_adc_task, "ADC TASK", ADC_READ_STACK, NULL, 1, &g_tasks[adc_task]);
 #ifdef SHOCK_POTS
@@ -195,6 +205,8 @@ void start_daq2()
 	{
 		xTaskCreate(error_task, "ERROR TASK", DAQ_TASK_STACK, NULL, 1, NULL);
 	}
+
+  HAL_ADC_Start_DMA(&hadc1,(uint32_t *) hacked_adc_values, 5);
 
 	HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
 }
@@ -405,8 +417,9 @@ void send_shock_data()
 		tx.RTR = CAN_RTR_DATA;
 		tx.DLC = 4;
 		xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
-		vTaskDelayUntil(&last_wake, REFRESH_RATE);
+		vTaskDelayUntil(&last_wake, 20);
 	}
+	vTaskDelete(NULL);
 }
 
 /**
@@ -619,22 +632,33 @@ void read_adc_task()
 	TickType_t last_wake = xTaskGetTickCount();
 	while (PER == GREAT)
 	{
-		uint8_t i = 0;
 		last_wake = xTaskGetTickCount();
+
+#ifdef REAR_DAQ
 		// read every channel on all the MAX chips
 		// each object in the array has a function pointer depending on the sensor
-
-		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
+		for (uint8_t i = 0; i < 3; i++)
 		{
-			g_max11616_sensors[i].read(g_max11616_sensors[i].max);
+			inline_temp_read_ADC(&g_max11616_sensors[MOTOR_C_TEMP + i], i, hacked_adc_values);
 		}
+#else
+		g_max11616_sensors[LEFT_SHOCK_POT].value  = hacked_adc_values[1];
+		g_max11616_sensors[RIGHT_SHOCK_POT].value = hacked_adc_values[2];
+#endif
 
-		for (i = 0; i < MAX11614_CHANNELS && !g_max11614_sensors[0].max->broke; i++)
-		{
-			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
-		}
-		vTaskDelayUntil(&last_wake, MUX_READ_PERIOD);
-		HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
+
+
+//		for (i = 0; i < MAX11616_CHANNELS && !g_max11616_sensors[0].max->broke; i++)
+//		{
+//			g_max11616_sensors[i].read(g_max11616_sensors[i].max);
+//		}
+//
+//		for (i = 0; i < MAX11614_CHANNELS && !g_max11614_sensors[0].max->broke; i++)
+//		{
+//			g_max11614_sensors[i].read(g_max11614_sensors[i].max);
+//		}
+		vTaskDelayUntil(&last_wake, 1000);
+//		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
 	}
 }
 
@@ -732,6 +756,27 @@ void route_to_dcan(CanRxMsgTypeDef * rx)
 
 	xQueueSendToBack(daq.q_tx_dcan, &tx, 100);
 	HAL_GPIO_WritePin(GPIOD, LD4_Pin, 0);
+}
+
+void inline_temp_read_ADC(void * tempSensor_temp, uint8_t index, uint32_t * temp_values)
+{
+  sensor_t * tempSensor = (sensor_t *) tempSensor_temp;
+  uint16_t adcValue;
+  double vOut;
+  double resistance;
+  double scaler = 3 / ADC_VREF;
+  uint16_t knownR = FLOW_SPEED_RESISTOR_OHM; //Resistance of resistor in front of the flow Sensor
+
+  adcValue = temp_values[index];
+
+  vOut = (((double) adcValue) * scaler / 4095.0) * ADC_VREF;
+  resistance = (-knownR * vOut) / (vOut - ADC_VREF);
+
+  //Line of best fit calculated off of data in datasheet
+  //Temperature = -26.689*ln(Resistance) + 272.279
+  double r_ln = log(resistance);
+  double temp = -26.689 * r_ln + 272.279;
+  tempSensor->value = temp * 100;
 }
 
 void send_heartbeat(uint8_t module) {

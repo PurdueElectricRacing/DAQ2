@@ -12,6 +12,8 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 
+#define ID_BMS 0x6B1
+
 #define ID_PEDALBOX1						0x500
 #define ID_PEDALBOX2						0x501
 
@@ -54,7 +56,7 @@
 #define REAR_ERROR              0x7F1
 
 #define QUEUE_SIZE_RXCAN_1			16
-#define QUEUE_SIZE_RXCAN_2			16
+#define QUEUE_SIZE_RXCAN_2			25
 #define QUEUE_SIZE_TXCAN_1			20
 #define QUEUE_SIZE_TXCAN_2			20
 
@@ -129,6 +131,10 @@ void taskTX_VCAN();
 void taskRXCAN();
 void process_mux_data();
 void process_wheel_speed();
+void rx_dcan();
+void rx_vcan();
+void route_to_vcan();
+
 
 
 #endif /* DAQ_CAN_H_ */

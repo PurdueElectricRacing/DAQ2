@@ -100,6 +100,10 @@ void Error_Handler(void);
 #define PH1_OSC_OUT_GPIO_Port GPIOH
 #define OTG_FS_PowerSwitchOn_Pin GPIO_PIN_0
 #define OTG_FS_PowerSwitchOn_GPIO_Port GPIOC
+#define L_SHOCK_POT_Pin GPIO_PIN_1
+#define L_SHOCK_POT_GPIO_Port GPIOC
+#define R_SHOCK_POT_Pin GPIO_PIN_2
+#define R_SHOCK_POT_GPIO_Port GPIOC
 #define PDM_OUT_Pin GPIO_PIN_3
 #define PDM_OUT_GPIO_Port GPIOC
 #define B1_Pin GPIO_PIN_0
@@ -108,6 +112,8 @@ void Error_Handler(void);
 #define Right_wheel_GPIO_Port GPIOA
 #define Left_wheel_Pin GPIO_PIN_2
 #define Left_wheel_GPIO_Port GPIOA
+#define MOTOR_COOL_TEMP_Pin GPIO_PIN_3
+#define MOTOR_COOL_TEMP_GPIO_Port GPIOA
 #define I2S3_WS_Pin GPIO_PIN_4
 #define I2S3_WS_GPIO_Port GPIOA
 #define SPI1_SCK_Pin GPIO_PIN_5
@@ -116,6 +122,10 @@ void Error_Handler(void);
 #define SPI1_MISO_GPIO_Port GPIOA
 #define SPI1_MOSI_Pin GPIO_PIN_7
 #define SPI1_MOSI_GPIO_Port GPIOA
+#define RAD_COOL_TEMP_Pin GPIO_PIN_0
+#define RAD_COOL_TEMP_GPIO_Port GPIOB
+#define MC_COOL_TEMP_Pin GPIO_PIN_1
+#define MC_COOL_TEMP_GPIO_Port GPIOB
 #define BOOT1_Pin GPIO_PIN_2
 #define BOOT1_GPIO_Port GPIOB
 #define CLK_IN_Pin GPIO_PIN_10
